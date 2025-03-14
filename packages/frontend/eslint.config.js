@@ -1,34 +1,28 @@
-import globals from "globals";
-import pluginJs from "@eslint/js";
-import tseslint from "typescript-eslint";
-import pluginReact from "eslint-plugin-react";
-import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
-import stylistic from "@stylistic/eslint-plugin";
-
+import globals from 'globals'
+import pluginJs from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import pluginReact from 'eslint-plugin-react'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import stylistic from '@stylistic/eslint-plugin'
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
-  {files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"]},
+  { files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'] },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   pluginReact.configs.flat.recommended,
+  stylistic.configs.recommended,
   {
     languageOptions: { globals: globals.browser },
     plugins: {
-      "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
-      "@stylistic": stylistic,
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
     },
     rules: {
-      "@stylistic/comma-dangle": ["error", "always-multiline"],
-      "@stylistic/semi": "error",
-      "@stylistic/quotes": "error",
-      "@stylistic/indent": ["error", 2],
-      "@stylistic/newline-per-chained-call": ["error", { "ignoreChainWithDepth": 1 }],
-      "react/react-in-jsx-scope": "off",
-      "react/jsx-uses-react": "off",
-      "no-empty-pattern": "off",
+      'react/react-in-jsx-scope': 'off',
+      'react/jsx-uses-react': 'off',
+      'no-empty-pattern': 'off',
     },
   },
-];
+]
