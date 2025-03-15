@@ -5,74 +5,118 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  /* メインカラー */
+  --primary: oklch(70.19% 0.1578 42.35); /* 新しいプライマリカラー */
+
+  /* ニュートラルカラー（背景、テキストなど） */
+  --background: oklch(98% 0 0);        /* ほぼ白 */
+  --foreground: oklch(20% 0 0);        /* ほぼ黒 */
+
+  /* コンポーネントカラー (カード、ポップオーバーなど) */
+  --card: oklch(100% 0 0);            /* 白 */
+  --card-foreground: var(--foreground);
+  --popover: oklch(100% 0 0);         /* 白 */
+  --popover-foreground: var(--foreground);
+
+    /* プライマリカラーのバリエーション */
+  --primary-foreground: oklch(100% 0 0);
+
+   /* セカンダリカラー（控えめな要素、ホバーなど） */
+  --secondary: oklch(90% 0.045 42.35);       /* プライマリに合わせたわずかに色味のあるグレー */
+  --secondary-foreground: var(--foreground);
+
+   /* ミュートカラー（背景、区切り線など）*/
+  --muted: oklch(95% 0 0);           /* 非常に薄いグレー */
+  --muted-foreground: oklch(60% 0 0);   /* 中間的なグレー */
+
+   /* アクセントカラー */
+  --accent: oklch(82% 0.07 42.35);    /* プライマリより少し薄い色 */
+  --accent-foreground: var(--foreground);
+
+  /* 破壊的アクションカラー */
+  --destructive: oklch(60% 0.2 27);     /* 赤 */
+  --destructive-foreground: oklch(100% 0 0); /* 白 */
+
+  /* ボーダー、入力欄、リング */
+  --border: oklch(85% 0 0);          /* 薄いグレー */
+  --input: oklch(95% 0 0);           /* 非常に薄いグレー */
+  --ring: var(--primary);            /* プライマリカラー */
+
+  /* チャートカラー (必要に応じて調整) */
+  --chart-1: oklch(70% 0.15 180);
+  --chart-2: oklch(65% 0.2  90);
+  --chart-3: oklch(80% 0.1  270);
+  --chart-4: oklch(75% 0.18 40);
+  --chart-5: oklch(60% 0.1  330);
+
+  /* 半径 */
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+   /*サイドバー*/
+   --sidebar: oklch(96% 0 0);
+   --sidebar-foreground: var(--foreground);
+   --sidebar-primary: var(--primary);
+   --sidebar-primary-foreground: var(--primary-foreground);
+   --sidebar-accent: var(--accent);
+   --sidebar-accent-foreground: var(--accent-foreground);
+   --sidebar-border: var(--border);
+   --sidebar-ring: var(--ring);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+   /* メインカラー */
+  --primary: oklch(70.19% 0.1578 42.35); /* 新しいプライマリカラー */
+
+   /*ダークモード ニュートラルカラー*/
+  --background: oklch(15% 0 0);        /* 非常に暗いグレー */
+  --foreground: oklch(95% 0 0);        /* ほぼ白 */
+
+  /* ダークモード コンポーネントカラー */
+  --card: oklch(20% 0 0);            /* 暗いグレー */
+  --card-foreground: var(--foreground);
+  --popover: oklch(20% 0 0);            /* 暗いグレー */
+  --popover-foreground: var(--foreground);
+
+  /* プライマリカラーのバリエーション */
+  --primary-foreground: oklch(20% 0.0 0);
+
+    /* セカンダリカラー */
+  --secondary: oklch(30% 0.045 42.35);      /* プライマリに合わせたわずかに色味のある暗いグレー */
+  --secondary-foreground: var(--foreground);
+
+  /* ミュートカラー */
+  --muted: oklch(25% 0 0);          /* 暗いグレー */
+  --muted-foreground: oklch(70% 0 0);  /* 明るめのグレー */
+
+  /* アクセントカラー */
+  --accent: oklch(40% 0.07 42.35);   /* プライマリより少し暗い色 */
+  --accent-foreground: var(--foreground);
+
+  /* 破壊的アクション */
+  --destructive: oklch(60% 0.2 27);     /* 赤 (ライトモードと同じ) */
+  --destructive-foreground: oklch(100% 0 0); /* 白 */
+
+  /* ボーダー、入力、リング */
+  --border: oklch(30% 0 0);         /* 暗いグレー */
+  --input: oklch(25% 0 0);           /* 暗いグレー */
+  --ring: var(--primary);           /* プライマリカラー */
+
+  /* チャートカラー (必要に応じて調整) */
+  --chart-1: oklch(70% 0.15 180);
+  --chart-2: oklch(65% 0.2  90);
+  --chart-3: oklch(80% 0.1  270);
+  --chart-4: oklch(75% 0.18 40);
+  --chart-5: oklch(60% 0.1  330);
+
+    /*サイドバー*/
+  --sidebar: oklch(23% 0 0);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
 @theme inline {
