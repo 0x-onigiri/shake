@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router'
+import '@mysten/dapp-kit/dist/index.css'
 import Header from './header'
 
 export default function Layout() {
