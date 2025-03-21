@@ -2,13 +2,14 @@ import { Suspense, use } from 'react'
 import { SuiGraphQLClient } from '@mysten/sui/graphql'
 import { graphql } from '@mysten/sui/graphql/schemas/latest'
 import { useSuiClientQuery } from '@mysten/dapp-kit'
+import { devInspectAndGetReturnValues, objResToFields, objResToContent } from '@polymedia/suitcase-core'
 import { Card,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle } from '@/components/ui/card'
 import { truncateAddress } from '@/lib/utils'
-import { TESTNET_PACKAGE_ID } from '@/constants'
+import { SHAKE_ONIGIRI } from '@/constants'
 
 const gqlClient = new SuiGraphQLClient({
   url: 'https://sui-testnet.mystenlabs.com/graphql',
@@ -18,7 +19,7 @@ const postListQuery = graphql(`
   query {
     objects(
       filter: {
-        type: "${TESTNET_PACKAGE_ID}::blog::Post"
+        type: "${SHAKE_ONIGIRI.testnet.packageId}::blog::Post"
       }
     ) {
       pageInfo {
@@ -36,11 +37,11 @@ const postListQuery = graphql(`
 `)
 
 async function fetchPostList() {
-  const result = await gqlClient.query({
+  const response = await gqlClient.query({
     query: postListQuery,
   })
 
-  return result.data?.objects.nodes
+  return response.data?.objects.nodes
 }
 
 export default function ShakeList() {
@@ -73,6 +74,8 @@ function PostList({
 
   console.log(data)
 
+  // const posts = data.map(objResToFields)
+  // console.log(posts)
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <ul className="grid grid-cols-3 gap-4">

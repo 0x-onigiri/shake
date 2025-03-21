@@ -15,6 +15,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@mysten/dapp-kit": "^0.14.53",
+        "@polymedia/suitcase-core": "^0.0.48",
         "@radix-ui/react-dropdown-menu": "^2.1.6",
         "@radix-ui/react-label": "^2.1.2",
         "@radix-ui/react-slot": "^1.1.2",
@@ -165,6 +166,8 @@
     "@nodelib/fs.stat": ["@nodelib/fs.stat@2.0.5", "", {}, "sha512-RkhPPp2zrqDAQA/2jNhnztcPAlv64XdhIp7a7454A5ovI7Bukxgt7MX7udwAu3zg1DcpPU0rz3VV1SeaqvY4+A=="],
 
     "@nodelib/fs.walk": ["@nodelib/fs.walk@1.2.8", "", { "dependencies": { "@nodelib/fs.scandir": "2.1.5", "fastq": "^1.6.0" } }, "sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg=="],
+
+    "@polymedia/suitcase-core": ["@polymedia/suitcase-core@0.0.48", "", { "peerDependencies": { "@mysten/sui": "^1.24.0" } }, "sha512-fQy3CD4A/QLtdBoLKaxuMrkW9e4Pk6BSN2JJpro/larwa3US+Fd5KJWdagpJLke8VenrTOvAP3ozrr9DBN1giQ=="],
 
     "@radix-ui/primitive": ["@radix-ui/primitive@1.1.1", "", {}, "sha512-SJ31y+Q/zAyShtXJc8x83i9TYdbAfHZ++tUZnvjJJqFjzsdUnKsxPL6IEtBlxKkU7yzer//GQtZSV4GbldL3YA=="],
 

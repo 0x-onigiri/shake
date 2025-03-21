@@ -6,19 +6,22 @@ import './index.css'
 import Layout from './components/layout.tsx'
 import ShakeList from './pages/shakes/shake-list.tsx'
 import Cook from './pages/shakes/cook.tsx'
+import { UserProvider } from './contexts/user-context.tsx'
 
 createRoot(document.getElementById('root')!)
   .render(
     <StrictMode>
       <Provider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route path="/" element={<ShakeList />} />
-              <Route path="/cook" element={<Cook />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
+        <UserProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route path="/" element={<ShakeList />} />
+                <Route path="/cook" element={<Cook />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </UserProvider>
       </Provider>
     </StrictMode>,
   )

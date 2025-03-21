@@ -7,6 +7,7 @@ use sui::{
     clock::Clock,
     event,
 };
+use blog::user::UserActivity;
 
 // === Structs ===
 
@@ -20,24 +21,16 @@ public struct Post has key, store {
     created_at: u64,
 }
 
-// === Events ===
-
-public struct PostCreatedEvent has copy, drop {
-    post_id: ID,
-    author: address,
-    title: String,
-    created_at: u64,
-}
-
 fun init(_ctx: &mut TxContext) {}
 
 // === Public Functions ===
 
 public fun create_post(
+    mut user_activity: UserActivity,
     title: vector<u8>,
     clock: &Clock,
     ctx: &mut TxContext
-) {
+): UserActivity {
     let timestamp = clock.timestamp_ms();
 
     let post = Post {
@@ -47,12 +40,9 @@ public fun create_post(
         created_at: timestamp,
     };
 
-    event::emit(PostCreatedEvent {
-        post_id: object::id(&post),
-        author: tx_context::sender(ctx),
-        title: string::utf8(title),
-        created_at: timestamp,
-    });
+    user_activity.record_post_creation(post.id.to_address());
 
     transfer::share_object(post);
+
+    user_activity
 }
