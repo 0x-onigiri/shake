@@ -1,4 +1,4 @@
-import { useState, use, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { truncateAddress } from '@/lib/utils'
@@ -14,7 +14,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { WalletAccount } from '@mysten/wallet-standard'
 import { fetchUser } from '@/lib/shake-client'
-import { UserContext } from '../contexts/user-context'
+import { useSuspenseQuery } from '@tanstack/react-query'
+
+const AGGREGATOR = 'https://aggregator.walrus-testnet.walrus.space'
 
 export default function Header() {
   const [open, setOpen] = useState(false)
@@ -24,15 +26,13 @@ export default function Header() {
       <Link to="/" className="text-2xl font-bold text-primary">Shake</Link>
 
       <div className="flex justify-between items-center gap-4">
-        <Button asChild variant="link">
-          <Link to="/cook">Cook</Link>
-        </Button>
+
         {!currentAccount && (
           <div>
             <ConnectModal
               trigger={(
                 <Button>
-                  Connect Wallet
+                  Connect Wallet to Cook
                 </Button>
               )}
               open={open}
@@ -42,9 +42,14 @@ export default function Header() {
         )}
 
         {currentAccount && (
-          <WalletButton
-            walletAccount={currentAccount}
-          />
+          <>
+            <Button asChild variant="link">
+              <Link to="/cook">Cook</Link>
+            </Button>
+            <WalletButton
+              walletAccount={currentAccount}
+            />
+          </>
         )}
       </div>
     </header>
@@ -57,8 +62,6 @@ function WalletButton({
   walletAccount: WalletAccount
 }) {
   const { mutate: disconnect } = useDisconnectWallet()
-  // const promise = fetchUser(walletAccount.address)
-  const promise2 = use(UserContext)
 
   return (
     <div>
@@ -66,11 +69,10 @@ function WalletButton({
         <DropdownMenuTrigger
           asChild
         >
-          <Button>
+          <Button className="py-6">
             <Suspense fallback={truncateAddress(walletAccount.address)}>
               <WalletButtonLabel
                 walletAddress={walletAccount.address}
-                promise={promise2}
               />
             </Suspense>
           </Button>
@@ -80,7 +82,7 @@ function WalletButton({
             {/* {walletAccount?.label && <p>{walletAccount.label}</p>} */}
             <Suspense fallback={<div>Loading...</div>}>
               <UserInfo
-                promise={promise2}
+                walletAddress={walletAccount.address}
               />
             </Suspense>
             <p>{truncateAddress(walletAccount.address)}</p>
@@ -96,23 +98,32 @@ function WalletButton({
 
 function WalletButtonLabel({
   walletAddress,
-  promise,
 }: {
   walletAddress: string
-  promise: Promise<any>
 }) {
-  const user = use(promise)
+  const { data: user } = useSuspenseQuery({
+    queryKey: ['fetchUser', walletAddress],
+    queryFn: () => fetchUser(walletAddress),
+  })
   if (!user) return truncateAddress(walletAddress)
 
-  return user.username
+  return (
+    <>
+      <img src={`${AGGREGATOR}/v1/blobs/${user.image}`} alt={user.username} className="w-8 h-8 rounded-full" />
+      <span>{user.username}</span>
+    </>
+  )
 }
 
 function UserInfo({
-  promise,
+  walletAddress,
 }: {
-  promise: Promise<any>
+  walletAddress: string
 }) {
-  const user = use(promise)
+  const { data: user } = useSuspenseQuery({
+    queryKey: ['fetchUser', walletAddress],
+    queryFn: () => fetchUser(walletAddress),
+  })
   if (!user) return null
 
   return (

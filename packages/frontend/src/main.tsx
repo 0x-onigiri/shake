@@ -4,24 +4,39 @@ import { BrowserRouter, Routes, Route } from 'react-router'
 import Provider from './provider'
 import './index.css'
 import Layout from './components/layout.tsx'
+import RequireWallet from './components/require-wallet.tsx'
+import RequireAuth from './components/require-auth.tsx'
 import ShakeList from './pages/shakes/shake-list.tsx'
 import Cook from './pages/shakes/cook.tsx'
-import { UserProvider } from './contexts/user-context.tsx'
+import NewUserPage from './pages/shakes/new-user.tsx'
 
 createRoot(document.getElementById('root')!)
   .render(
     <StrictMode>
       <Provider>
-        <UserProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Layout />}>
-                <Route path="/" element={<ShakeList />} />
-                <Route path="/cook" element={<Cook />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </UserProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route path="/" element={<ShakeList />} />
+              <Route
+                path="/cook"
+                element={(
+                  <RequireAuth>
+                    <Cook />
+                  </RequireAuth>
+                )}
+              />
+              <Route
+                path="/new-user"
+                element={(
+                  <RequireWallet>
+                    <NewUserPage />
+                  </RequireWallet>
+                )}
+              />
+            </Route>
+          </Routes>
+        </BrowserRouter>
       </Provider>
     </StrictMode>,
   )

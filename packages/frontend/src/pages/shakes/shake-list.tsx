@@ -1,8 +1,5 @@
-import { Suspense, use } from 'react'
 import { SuiGraphQLClient } from '@mysten/sui/graphql'
 import { graphql } from '@mysten/sui/graphql/schemas/latest'
-import { useSuiClientQuery } from '@mysten/dapp-kit'
-import { devInspectAndGetReturnValues, objResToFields, objResToContent } from '@polymedia/suitcase-core'
 import { Card,
   CardDescription,
   CardFooter,
@@ -10,6 +7,7 @@ import { Card,
   CardTitle } from '@/components/ui/card'
 import { truncateAddress } from '@/lib/utils'
 import { SHAKE_ONIGIRI } from '@/constants'
+import { useSuspenseQuery } from '@tanstack/react-query'
 
 const gqlClient = new SuiGraphQLClient({
   url: 'https://sui-testnet.mystenlabs.com/graphql',
@@ -45,6 +43,11 @@ async function fetchPostList() {
 }
 
 export default function ShakeList() {
+  const { data: posts } = useSuspenseQuery({
+    queryKey: ['fetchPostList'],
+    queryFn: fetchPostList,
+  })
+
   // const { data } = useSuiClientQuery(
   //   'queryEvents',
   //   {
@@ -54,33 +57,15 @@ export default function ShakeList() {
   //   },
   // )
 
-  // if (!data) {
-  //   return null
-  // }
+  if (!posts) {
+    return null
+  }
 
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <PostList promise={fetchPostList()} />
-    </Suspense>
-  )
-}
-
-function PostList({
-  promise,
-}: {
-  promise: Promise<any>
-}) {
-  const data = use(promise)
-
-  console.log(data)
-
-  // const posts = data.map(objResToFields)
-  // console.log(posts)
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <ul className="grid grid-cols-3 gap-4">
-        {data.map((data) => {
-          const parsedJson = data.asMoveObject.contents.json
+        {posts.map((post) => {
+          const parsedJson = post.asMoveObject.contents.json
           return (
             <li key={parsedJson.postId}>
               <Card>

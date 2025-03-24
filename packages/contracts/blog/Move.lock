@@ -2,10 +2,11 @@
 
 [move]
 version = 3
-manifest_digest = "EA868319D04B62700BE588AB7DCE3D18950444CD485AFD8780D53A20EA62CC76"
-deps_digest = "F8BBB0CCB2491CA29A3DF03D6F92277A4F3574266507ACD77214D37ECA3F3082"
+manifest_digest = "65F6AF10A47B3F4A80D3F92C2794E85E8D187726784A2252E00C6A1A53C404DC"
+deps_digest = "3C4103934B1E040BB6B23F1D610B4EF9F2F1166A50A104EADCF77467C004C600"
 dependencies = [
   { id = "Sui", name = "Sui" },
+  { id = "Walrus", name = "Walrus" },
 ]
 
 [[move.package]]
@@ -20,6 +21,23 @@ dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
 ]
 
+[[move.package]]
+id = "WAL"
+source = { git = "https://github.com/MystenLabs/walrus-docs.git", rev = "main", subdir = "contracts/wal" }
+
+dependencies = [
+  { id = "Sui", name = "Sui" },
+]
+
+[[move.package]]
+id = "Walrus"
+source = { git = "https://github.com/MystenLabs/walrus-docs.git", rev = "main", subdir = "contracts/walrus" }
+
+dependencies = [
+  { id = "Sui", name = "Sui" },
+  { id = "WAL", name = "WAL" },
+]
+
 [move.toolchain-version]
 compiler-version = "1.44.3"
 edition = "2024.beta"
@@ -29,6 +47,6 @@ flavor = "sui"
 
 [env.testnet]
 chain-id = "4c78adac"
-original-published-id = "0x37ff82c529c30136bfa3d36e79baba9fcf0d06a5e1481e7ee9a39a2b55c6929f"
-latest-published-id = "0x37ff82c529c30136bfa3d36e79baba9fcf0d06a5e1481e7ee9a39a2b55c6929f"
+original-published-id = "0x2cc512c593a32ebb189857cb88ac41c29a1a2029c51a8723e09b5daa948e3936"
+latest-published-id = "0x2cc512c593a32ebb189857cb88ac41c29a1a2029c51a8723e09b5daa948e3936"
 published-version = "1"

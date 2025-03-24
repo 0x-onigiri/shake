@@ -1,4 +1,4 @@
-import { useState, use, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +15,8 @@ import { Card,
   CardHeader,
   CardTitle,
   CardContent } from '@/components/ui/card'
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { ErrorBoundary } from 'react-error-boundary'
 
 export default function Cook() {
   const currentAccount = useCurrentAccount()
@@ -23,7 +25,7 @@ export default function Cook() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       {currentAccount && (
         <Suspense fallback={<div>Loading...</div>}>
-          <View promise={fetchUser(currentAccount.address)} />
+          <View walletAddress={currentAccount.address} />
         </Suspense>
       )}
     </div>
@@ -31,62 +33,33 @@ export default function Cook() {
 }
 
 function View({
-  promise,
+  walletAddress,
 }: {
-  promise: Promise<any>
+  walletAddress: string
 }) {
-  const user = use(promise)
+  const { data: user } = useSuspenseQuery({
+    queryKey: ['fetchUser', walletAddress],
+    queryFn: () => fetchUser(walletAddress),
+  })
 
   if (!user) {
-    return <CreateUser />
+    return null
   }
 
   return (
     <>
       <Suspense fallback={<div>Loading Posts...</div>}>
-        <UserPosts promise={fetchUserPosts(user.id)} />
+        <ErrorBoundary fallback={<div>On no!</div>}>
+          <UserPosts
+            userObjectId={user.id}
+          />
+        </ErrorBoundary>
       </Suspense>
 
       <CreatePost user={user} />
+
+      <h1>{user.id}</h1>
     </>
-  )
-}
-
-function CreateUser() {
-  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction()
-
-  async function create() {
-    const tx = new Transaction()
-
-    const [userActivity] = UserModule.create_new_user(
-      tx,
-      SHAKE_ONIGIRI.testnet.packageId,
-      SHAKE_ONIGIRI.testnet.userListObjectId,
-      'test-user',
-    )
-    UserModule.delete_user_activity(tx, SHAKE_ONIGIRI.testnet.packageId, userActivity)
-
-    signAndExecuteTransaction(
-      {
-        transaction: tx,
-        chain: 'sui:testnet',
-      },
-      {
-        onSuccess: (result) => {
-          console.log('executed createNewUser transaction', result)
-          window.location.reload()
-        },
-        onError: (error) => {
-          console.error('createNewUser error', error)
-        },
-      },
-    )
-  }
-
-  return (
-    <Button onClick={create}>
-      Create User
-    </Button>
   )
 }
 
@@ -102,7 +75,6 @@ function CreatePost({
 
   const handleSubmit = async (e: React.FormEvent) => {
     if (!user) return
-    console.log('handleSubmit', user)
     e.preventDefault()
 
     if (!title.trim()) {
@@ -171,11 +143,14 @@ function CreatePost({
 }
 
 function UserPosts({
-  promise,
+  userObjectId,
 }: {
-  promise: Promise<any>
+  userObjectId: string
 }) {
-  const posts = use(promise)
+  const { data: posts } = useSuspenseQuery({
+    queryKey: ['fetchUserPosts', userObjectId],
+    queryFn: () => fetchUserPosts(userObjectId),
+  })
 
   return (
     <div>

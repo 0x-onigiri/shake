@@ -41,6 +41,7 @@ export async function fetchUser(
   const user = {
     id: fields.id.id,
     username: fields.username,
+    image: fields.image,
   }
   return user
 }
@@ -75,8 +76,7 @@ export async function fetchUserPosts(
     },
   })
 
-  console.log(response)
-
   const posts = response.map(objResToFields)
+
   return posts
 }

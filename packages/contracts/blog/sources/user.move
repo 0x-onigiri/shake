@@ -7,6 +7,8 @@ use sui::table_vec::{Self, TableVec};
 
 use blog::paginator;
 
+use walrus::blob::Blob;
+
 
 // アカウントリスト(共有オブジェクト)
 public struct UserList has key {
@@ -22,6 +24,8 @@ public struct User has key {
     owner_address: address,
     // ユーザー名
     username: String,
+    // 画像
+    image: String,
     // アカウント作成日時
     created_at: u64,
     // 作成したブログ記事
@@ -49,6 +53,7 @@ fun init(ctx: &mut TxContext) {
 public fun create_new_user(
     user_list: &mut UserList,
     username: vector<u8>,
+    image_blob_id: vector<u8>,
     clock: &Clock,
     ctx: &mut TxContext,
 ): UserActivity {
@@ -56,6 +61,7 @@ public fun create_new_user(
         id: object::new(ctx),
         owner_address: ctx.sender(),
         username: username.to_string(),
+        image: image_blob_id.to_string(),
         created_at: clock.timestamp_ms(),
         posts: table_vec::empty(ctx),
     };

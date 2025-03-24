@@ -44,12 +44,15 @@ export const UserModule
     packageId: string,
     userList: string,
     userName: string,
+    imageBlobId: string,
   ): TransactionResult => {
     return tx.moveCall({
       target: `${packageId}::user::create_new_user`,
       arguments: [
         tx.object(userList),
         tx.pure.string(userName),
+        tx.pure.string(imageBlobId),
+        // tx.pure.option('u256', imageBlobId),
         tx.object('0x6'),
       ],
     })
