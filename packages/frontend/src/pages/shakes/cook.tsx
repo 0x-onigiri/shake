@@ -4,15 +4,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit'
-import { Transaction } from '@mysten/sui/transactions'
-import { SHAKE_ONIGIRI } from '@/constants'
-import { UserModule } from '@/lib/sui/user-functions'
 import { fetchUser, fetchUserPosts } from '@/lib/shake-client'
 import { Card,
   CardContent } from '@/components/ui/card'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { ErrorBoundary } from 'react-error-boundary'
 import { PostCard } from '@/components/post-card'
+import { createPost } from '@/lib/shake-client'
+import type { User } from '@/types'
 
 export default function Cook() {
   const currentAccount = useCurrentAccount()
@@ -48,15 +47,11 @@ function View({
     <div className="space-y-4">
       <Suspense fallback={<div>Loading Posts...</div>}>
         <ErrorBoundary fallback={<div>On no!</div>}>
-          <UserPosts
-            userObjectId={user.id}
-          />
+          <UserPosts userId={user.id} />
         </ErrorBoundary>
       </Suspense>
 
       <CreatePost user={user} />
-
-      <h1>{user.id}</h1>
     </div>
   )
 }
@@ -64,7 +59,7 @@ function View({
 function CreatePost({
   user,
 }: {
-  user: any
+  user: User
 }) {
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction()
   const navigate = useNavigate()
@@ -80,14 +75,7 @@ function CreatePost({
       return
     }
 
-    const tx = new Transaction()
-    const [userActivity1] = UserModule.existing_user_activity(
-      tx, SHAKE_ONIGIRI.testnet.packageId, user.id)
-    const [userActivity2] = tx.moveCall({
-      target: `${SHAKE_ONIGIRI.testnet.packageId}::blog::create_post`,
-      arguments: [userActivity1, tx.pure.string(title), tx.object('0x6')],
-    })
-    UserModule.delete_user_activity(tx, SHAKE_ONIGIRI.testnet.packageId, userActivity2)
+    const tx = await createPost(user.id, title)
 
     signAndExecuteTransaction(
       {
@@ -141,13 +129,13 @@ function CreatePost({
 }
 
 function UserPosts({
-  userObjectId,
+  userId,
 }: {
-  userObjectId: string
+  userId: string
 }) {
   const { data: posts } = useSuspenseQuery({
-    queryKey: ['fetchUserPosts', userObjectId],
-    queryFn: () => fetchUserPosts(userObjectId),
+    queryKey: ['fetchUserPosts', userId],
+    queryFn: () => fetchUserPosts(userId),
   })
 
   return (

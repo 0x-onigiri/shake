@@ -1,4 +1,6 @@
 import { Link } from 'react-router'
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { fetchUser } from '@/lib/shake-client'
 import type { Post } from '@/types'
 import { truncateAddress } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -15,6 +17,10 @@ type Props = {
 export function PostCard({
   post,
 }: Props) {
+  const { data: user } = useSuspenseQuery({
+    queryKey: ['fetchUser', post.author],
+    queryFn: () => fetchUser(post.author),
+  })
   return (
     <Card>
       <CardHeader>
@@ -25,7 +31,7 @@ export function PostCard({
         <p>
           by
           {' '}
-          {truncateAddress(post.author)}
+          {user?.username || truncateAddress(post.author)}
         </p>
         <Button asChild size="sm">
           <Link to={`/${post.id}`}>

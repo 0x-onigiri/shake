@@ -105,6 +105,7 @@ function WalletButtonLabel({
     queryKey: ['fetchUser', walletAddress],
     queryFn: () => fetchUser(walletAddress),
   })
+
   if (!user) return truncateAddress(walletAddress)
 
   return (

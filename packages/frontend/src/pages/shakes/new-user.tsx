@@ -3,20 +3,16 @@ import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, Loader2, CheckCircle } from 'lucide-react'
-import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit'
+import { useSignAndExecuteTransaction } from '@mysten/dapp-kit'
 import { Transaction } from '@mysten/sui/transactions'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { UserModule } from '@/lib/sui/user-functions'
-import { getFullnodeUrl, SuiClient } from '@mysten/sui/client'
 
 // Walrus Testnetのパブリッシャーとアグリゲーターのエンドポイント
 const PUBLISHER = 'https://publisher.walrus-testnet.walrus.space'
-const AGGREGATOR = 'https://aggregator.walrus-testnet.walrus.space'
-
-const suiClient = new SuiClient({ url: getFullnodeUrl('testnet') })
 
 // 画像をWalrusにアップロード
 const uploadImageToWalrus = async (file: File) => {
@@ -71,7 +67,7 @@ export default function NewUserPage() {
   // useActionStateを使用してフォームの状態を管理
 
   // クライアントサイドでのフォーム処理関数
-  async function registerUser(prevState: ActionState | undefined, formData: FormData): Promise<ActionState> {
+  async function registerUser(_: ActionState | undefined, formData: FormData): Promise<ActionState> {
     try {
     // ユーザー名の検証
       const username = formData.get('username') as string
