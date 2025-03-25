@@ -1,13 +1,12 @@
-module blog::blog;
+module shake::blog;
 
 // === Imports ===
 
 use std::string::{Self, String};
 use sui::{
     clock::Clock,
-    event,
 };
-use blog::user::UserActivity;
+use shake::user::UserActivity;
 
 // === Structs ===
 

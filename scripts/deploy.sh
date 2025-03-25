@@ -1,6 +1,6 @@
 #!/bin/bash
 
-output=$(cd ./packages/contracts/blog && sui client publish --silence-warnings)
+output=$(cd ./packages/sui/shake && sui client publish --silence-warnings)
 
 extract_package_id() {
     echo "$output" | grep -A 4 "Published Objects" | grep "PackageID:" | sed 's/.*PackageID: \([0-9a-fA-Fx]*\).*/\1/'

@@ -1,4 +1,4 @@
-module blog::paginator;
+module shake::paginator;
 
 // === imports ===
 

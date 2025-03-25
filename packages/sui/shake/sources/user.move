@@ -1,13 +1,11 @@
-module blog::user;
+module shake::user;
 
 use std::string::String;
 use sui::clock::Clock;
 use sui::table::{Self, Table};
 use sui::table_vec::{Self, TableVec};
 
-use blog::paginator;
-
-use walrus::blob::Blob;
+use shake::paginator;
 
 
 // アカウントリスト(共有オブジェクト)
