@@ -7,27 +7,25 @@ import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-ki
 import { Transaction } from '@mysten/sui/transactions'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { UserModule } from '@/lib/sui/user-functions'
-import { truncateAddress } from '@/lib/utils'
 import { fetchUser, fetchUserPosts } from '@/lib/shake-client'
 import { Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
   CardContent } from '@/components/ui/card'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { ErrorBoundary } from 'react-error-boundary'
+import { PostCard } from '@/components/post-card'
 
 export default function Cook() {
   const currentAccount = useCurrentAccount()
 
+  if (!currentAccount) {
+    return null
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      {currentAccount && (
-        <Suspense fallback={<div>Loading...</div>}>
-          <View walletAddress={currentAccount.address} />
-        </Suspense>
-      )}
+      <Suspense fallback={<div>Loading...</div>}>
+        <View walletAddress={currentAccount.address} />
+      </Suspense>
     </div>
   )
 }
@@ -47,7 +45,7 @@ function View({
   }
 
   return (
-    <>
+    <div className="space-y-4">
       <Suspense fallback={<div>Loading Posts...</div>}>
         <ErrorBoundary fallback={<div>On no!</div>}>
           <UserPosts
@@ -59,7 +57,7 @@ function View({
       <CreatePost user={user} />
 
       <h1>{user.id}</h1>
-    </>
+    </div>
   )
 }
 
@@ -159,21 +157,11 @@ function UserPosts({
       </h1>
       <ul className="grid grid-cols-3 gap-4">
         {
-          posts.map((post: any) => {
+          posts.map((post) => {
             return (
-              <Card key={post.id}>
-                <CardHeader>
-                  <CardTitle>{post.title}</CardTitle>
-                  <CardDescription>記事本文記事本文記事本文記事本文</CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <p>
-                    by
-                    {' '}
-                    {truncateAddress(post.author)}
-                  </p>
-                </CardFooter>
-              </Card>
+              <li key={post.id}>
+                <PostCard post={post} />
+              </li>
             )
           })
         }

@@ -9,6 +9,7 @@ import RequireAuth from './components/require-auth.tsx'
 import ShakeList from './pages/shakes/shake-list.tsx'
 import Cook from './pages/shakes/cook.tsx'
 import NewUserPage from './pages/shakes/new-user.tsx'
+import Post from './pages/shakes/post.tsx'
 
 createRoot(document.getElementById('root')!)
   .render(
@@ -34,6 +35,7 @@ createRoot(document.getElementById('root')!)
                   </RequireWallet>
                 )}
               />
+              <Route path="/:postId" element={<Post />} />
             </Route>
           </Routes>
         </BrowserRouter>

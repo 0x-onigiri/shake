@@ -5,6 +5,7 @@ import { devInspectAndGetReturnValues, objResToFields, objResToContent } from '@
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client'
 import { bcs } from '@mysten/sui/bcs'
 import { UserPostBcs, type UserPost } from './sui/user-objects'
+import type { Post } from '@/types'
 
 const suiClient = new SuiClient({ url: getFullnodeUrl('testnet') })
 
@@ -76,7 +77,32 @@ export async function fetchUserPosts(
     },
   })
 
-  const posts = response.map(objResToFields)
-
+  const fields = response.map(objResToFields)
+  const posts = fields.map((field) => {
+    const post: Post = {
+      id: field.id.id,
+      author: field.author,
+      title: field.title,
+    }
+    return post
+  })
   return posts
+}
+
+export async function fetchPost(
+  postId: string,
+) {
+  const postObject = await suiClient.getObject({
+    id: postId,
+    options: {
+      showContent: true,
+    },
+  })
+  const fields = objResToFields(postObject)
+  const post: Post = {
+    id: fields.id.id,
+    author: fields.author,
+    title: fields.title,
+  }
+  return post
 }

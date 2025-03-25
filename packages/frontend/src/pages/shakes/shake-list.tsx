@@ -1,13 +1,9 @@
+import type { Post } from '@/types'
 import { SuiGraphQLClient } from '@mysten/sui/graphql'
 import { graphql } from '@mysten/sui/graphql/schemas/latest'
-import { Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle } from '@/components/ui/card'
-import { truncateAddress } from '@/lib/utils'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { PostCard } from '@/components/post-card'
 
 const gqlClient = new SuiGraphQLClient({
   url: 'https://sui-testnet.mystenlabs.com/graphql',
@@ -64,24 +60,11 @@ export default function ShakeList() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <ul className="grid grid-cols-3 gap-4">
-        {posts.map((post) => {
-          const parsedJson = post.asMoveObject.contents.json
+        {posts.map((p) => {
+          const post = p?.asMoveObject?.contents?.json as Post
           return (
-            <li key={parsedJson.postId}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>{parsedJson.title}</CardTitle>
-                  <CardDescription>記事本文記事本文記事本文記事本文</CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <p>
-                    by
-                    {' '}
-                    {truncateAddress(parsedJson.author)}
-                  </p>
-                </CardFooter>
-              </Card>
-
+            <li key={post.id}>
+              <PostCard post={post} />
             </li>
           )
         })}
