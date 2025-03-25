@@ -27,14 +27,21 @@ export async function fetchUser(
       bcs.Address,
     ],
   ])
-  const userAddress = blockReturns[0][0] as string
+  const userId = blockReturns[0][0] as string
 
-  if (userAddress === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+  if (userId === '0x0000000000000000000000000000000000000000000000000000000000000000') {
     return null
   }
 
+  const user = await fetchUserByUserId(userId)
+  return user
+}
+
+export async function fetchUserByUserId(
+  userId: string,
+) {
   const userObject = await suiClient.getObject({
-    id: userAddress,
+    id: userId,
     options: {
       showContent: true,
     },

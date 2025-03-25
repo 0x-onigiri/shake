@@ -13,11 +13,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import type { WalletAccount } from '@mysten/wallet-standard'
 import { fetchUser } from '@/lib/shake-client'
 import { useSuspenseQuery } from '@tanstack/react-query'
-
-const AGGREGATOR = 'https://aggregator.walrus-testnet.walrus.space'
+import { AGGREGATOR } from '@/constants'
 
 export default function Header() {
   const [open, setOpen] = useState(false)
@@ -140,7 +140,10 @@ function WalletButtonLabel({
 
   return (
     <>
-      <img src={`${AGGREGATOR}/v1/blobs/${user.image}`} alt={user.username} className="w-8 h-8 rounded-full" />
+      <Avatar>
+        <AvatarImage src={`${AGGREGATOR}/v1/blobs/${user.image}`} alt={user.username} />
+        <AvatarFallback>💧</AvatarFallback>
+      </Avatar>
       <span>{user.username}</span>
     </>
   )
