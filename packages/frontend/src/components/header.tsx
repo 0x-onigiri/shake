@@ -12,6 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import type { WalletAccount } from '@mysten/wallet-standard'
 import { fetchUser } from '@/lib/shake-client'
 import { useSuspenseQuery } from '@tanstack/react-query'
@@ -28,31 +29,60 @@ export default function Header() {
       <div className="flex justify-between items-center gap-4">
 
         {!currentAccount && (
-          <div>
-            <ConnectModal
-              trigger={(
-                <Button>
-                  Connect Wallet to Cook
-                </Button>
-              )}
-              open={open}
-              onOpenChange={isOpen => setOpen(isOpen)}
-            />
-          </div>
+          <ConnectModal
+            trigger={(
+              <Button>
+                Connect Wallet to Cook
+              </Button>
+            )}
+            open={open}
+            onOpenChange={isOpen => setOpen(isOpen)}
+          />
         )}
 
         {currentAccount && (
-          <>
-            <Button asChild variant="link">
-              <Link to="/cook">Cook</Link>
-            </Button>
-            <WalletButton
-              walletAccount={currentAccount}
-            />
-          </>
+          <WalletMenu
+            walletAccount={currentAccount}
+          />
         )}
       </div>
     </header>
+  )
+}
+
+function WalletMenu({
+  walletAccount,
+}: {
+  walletAccount: WalletAccount
+}) {
+  const { data: user } = useSuspenseQuery({
+    queryKey: ['fetchUser', walletAccount.address],
+    queryFn: () => fetchUser(walletAccount.address),
+  })
+
+  return (
+    <>
+      {!user && (
+        <Alert>
+          <AlertTitle>Create Profile!</AlertTitle>
+          <AlertDescription className="flex items-center gap-2">
+            Create a profile to get started.
+            <Button asChild variant="link">
+              <Link to="/new-user">Create</Link>
+            </Button>
+          </AlertDescription>
+
+        </Alert>
+      )}
+      {user && (
+        <Button asChild variant="link">
+          <Link to="/cook">Cook</Link>
+        </Button>
+      )}
+      <WalletButton
+        walletAccount={walletAccount}
+      />
+    </>
   )
 }
 
