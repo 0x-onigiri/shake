@@ -3,7 +3,7 @@ import { SuiGraphQLClient } from '@mysten/sui/graphql'
 import { graphql } from '@mysten/sui/graphql/schemas/latest'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { PostCard } from '@/components/post-card'
+import { PostCard } from '@/components/posts/post-card'
 
 const gqlClient = new SuiGraphQLClient({
   url: 'https://sui-testnet.mystenlabs.com/graphql',
@@ -38,7 +38,7 @@ async function fetchPostList() {
   return response.data?.objects.nodes
 }
 
-export default function ShakeList() {
+export default function ShakeListPage() {
   const { data: posts } = useSuspenseQuery({
     queryKey: ['fetchPostList'],
     queryFn: fetchPostList,

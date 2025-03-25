@@ -9,11 +9,11 @@ import { Card,
   CardContent } from '@/components/ui/card'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { ErrorBoundary } from 'react-error-boundary'
-import { PostCard } from '@/components/post-card'
+import { PostCard } from '@/components/posts/post-card'
 import { createPost } from '@/lib/shake-client'
 import type { User } from '@/types'
 
-export default function Cook() {
+export default function CookPage() {
   const currentAccount = useCurrentAccount()
 
   if (!currentAccount) {

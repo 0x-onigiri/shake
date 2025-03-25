@@ -1,8 +1,8 @@
 import { Outlet } from 'react-router'
 import '@mysten/dapp-kit/dist/index.css'
-import Header from './header'
+import { Header } from '@/components/common/header'
 
-export default function Layout() {
+export function Layout() {
   return (
     <div className="flex flex-col min-h-screen items-center">
       <Header />

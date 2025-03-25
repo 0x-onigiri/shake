@@ -11,7 +11,7 @@ const { networkConfig } = createNetworkConfig({
   testnet: { url: getFullnodeUrl('testnet') },
 })
 
-export default function Provider({
+export function Provider({
   children,
 }: Readonly<{
   children: React.ReactNode

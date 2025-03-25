@@ -11,7 +11,7 @@ type Props = {
   children: React.ReactNode
 }
 
-export default function RequireWallet({ children }: Props) {
+export function RequireAuth({ children }: Props) {
   const currentAccount = useCurrentAccount()
 
   if (!currentAccount) {
@@ -20,7 +20,7 @@ export default function RequireWallet({ children }: Props) {
         <ConnectModal
           trigger={(
             <Button>
-              Connect Wallet
+              Connect Wallet to Cook
             </Button>
           )}
         />
@@ -29,7 +29,7 @@ export default function RequireWallet({ children }: Props) {
   }
 
   return <CheckAuth walletAddress={currentAccount.address}>{children}</CheckAuth>
-}
+};
 
 function CheckAuth({
   walletAddress,
@@ -43,10 +43,10 @@ function CheckAuth({
     queryFn: () => fetchUser(walletAddress),
   })
 
-  if (user) {
-    window.location.href = '/'
+  if (!user) {
+    window.location.href = '/new-user'
     // FIXME: this is not working (navigate of useNavigate)
-    // return navigate('/')
+    // return navigate('/new-user')
   }
 
   return children

@@ -19,7 +19,7 @@ import { fetchUser } from '@/lib/shake-client'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { AGGREGATOR } from '@/constants'
 
-export default function Header() {
+export function Header() {
   const [open, setOpen] = useState(false)
   const currentAccount = useCurrentAccount()
   return (
