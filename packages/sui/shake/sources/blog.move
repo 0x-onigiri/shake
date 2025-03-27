@@ -1,12 +1,10 @@
 module shake::blog;
 
-// === Imports ===
-
-use std::string::{Self, String};
-use sui::{
-    clock::Clock,
-};
 use shake::user::UserActivity;
+use std::string::{Self, String};
+use sui::clock::Clock;
+
+// === Imports ===
 
 // === Structs ===
 
@@ -28,7 +26,7 @@ public fun create_post(
     mut user_activity: UserActivity,
     title: vector<u8>,
     clock: &Clock,
-    ctx: &mut TxContext
+    ctx: &mut TxContext,
 ): UserActivity {
     let timestamp = clock.timestamp_ms();
 
