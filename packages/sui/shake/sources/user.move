@@ -1,12 +1,10 @@
 module shake::user;
 
+use shake::paginator;
 use std::string::String;
 use sui::clock::Clock;
 use sui::table::{Self, Table};
 use sui::table_vec::{Self, TableVec};
-
-use shake::paginator;
-
 
 // アカウントリスト(共有オブジェクト)
 public struct UserList has key {
@@ -31,7 +29,7 @@ public struct User has key {
 }
 
 //Userによって作成されたpost Postは共有オブジェクトとするので、そのIDを保存する
-public struct UserPost has store, copy {
+public struct UserPost has copy, store {
     post_address: address,
 }
 
@@ -41,10 +39,10 @@ public struct UserActivity {
 }
 
 fun init(ctx: &mut TxContext) {
-  transfer::share_object(UserList {
-      id: object::new(ctx),
-      users: table::new(ctx),
-  });
+    transfer::share_object(UserList {
+        id: object::new(ctx),
+        users: table::new(ctx),
+    });
 }
 
 // 初回記事作成：新しいアカウントを作成
@@ -75,9 +73,7 @@ public fun create_user_activity(user: User): UserActivity {
     UserActivity { user }
 }
 
-public fun existing_user_activity(
-    user: User,
-): UserActivity {
+public fun existing_user_activity(user: User): UserActivity {
     return UserActivity {
         user,
     }
@@ -90,7 +86,6 @@ public fun delete_user_activity(user_activity: UserActivity, ctx: &TxContext) {
     transfer::transfer(user, ctx.sender());
 }
 
-
 // 記事作成時に呼びだし記事のidをUserへ記録する
 public(package) fun record_post_creation(user_activity: &mut UserActivity, post_address: address) {
     user_activity
@@ -101,11 +96,7 @@ public(package) fun record_post_creation(user_activity: &mut UserActivity, post_
         })
 }
 
-public fun get_user_address(
-    registry: &UserList,
-    owner_addr: address,
-): address
-{
+public fun get_user_address(registry: &UserList, owner_addr: address): address {
     if (registry.users.contains(owner_addr)) {
         *registry.users.borrow(owner_addr)
     } else {
@@ -118,8 +109,6 @@ public fun get_posts(
     cursor: u64,
     limit: u64,
     ascending: bool,
-): (vector<UserPost>, bool, u64)
-{
+): (vector<UserPost>, bool, u64) {
     return paginator::get_page(&user.posts, cursor, limit, ascending)
 }
-
