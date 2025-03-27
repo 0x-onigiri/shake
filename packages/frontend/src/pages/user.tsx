@@ -37,6 +37,11 @@ function View({
         <AvatarFallback>💧</AvatarFallback>
       </Avatar>
       <h1 className="text-3xl">{user.username}</h1>
+      {user.bio && (
+        <div className="max-w-md w-full bg-gray-50 rounded-lg border border-gray-100 p-4 shadow-sm mt-2">
+          <p style={{ whiteSpace: 'pre-wrap' }} className="text-gray-700 text-start leading-relaxed">{user.bio}</p>
+        </div>
+      )}
     </div>
   )
 }
