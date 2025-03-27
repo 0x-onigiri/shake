@@ -22,6 +22,8 @@ public struct User has key {
     username: String,
     // 画像
     image: String,
+    // 自己紹介
+    bio: String,
     // アカウント作成日時
     created_at: u64,
     // 作成したブログ記事
@@ -50,6 +52,7 @@ public fun create_new_user(
     user_list: &mut UserList,
     username: vector<u8>,
     image_blob_id: vector<u8>,
+    bio: vector<u8>,
     clock: &Clock,
     ctx: &mut TxContext,
 ): UserActivity {
@@ -58,6 +61,7 @@ public fun create_new_user(
         owner_address: ctx.sender(),
         username: username.to_string(),
         image: image_blob_id.to_string(),
+        bio: bio.to_string(),
         created_at: clock.timestamp_ms(),
         posts: table_vec::empty(ctx),
     };
