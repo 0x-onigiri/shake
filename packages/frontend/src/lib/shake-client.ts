@@ -51,6 +51,7 @@ export async function fetchUserByUserId(
     id: fields.id.id,
     username: fields.username,
     image: fields.image,
+    bio: fields.bio,
   }
   return user
 }

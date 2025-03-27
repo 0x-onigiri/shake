@@ -45,6 +45,7 @@ export const UserModule
     userList: string,
     userName: string,
     imageBlobId: string,
+    bio: string,
   ): TransactionResult => {
     return tx.moveCall({
       target: `${packageId}::user::create_new_user`,
@@ -52,7 +53,7 @@ export const UserModule
         tx.object(userList),
         tx.pure.string(userName),
         tx.pure.string(imageBlobId),
-        // tx.pure.option('u256', imageBlobId),
+        tx.pure.string(bio),
         tx.object('0x6'),
       ],
     })

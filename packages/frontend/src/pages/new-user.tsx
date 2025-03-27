@@ -10,6 +10,7 @@ import { useSignAndExecuteTransaction } from '@mysten/dapp-kit'
 import { Transaction } from '@mysten/sui/transactions'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { UserModule } from '@/lib/sui/user-functions'
+import { Textarea } from "@/components/ui/textarea"
 
 // Walrus Testnetのパブリッシャーとアグリゲーターのエンドポイント
 const PUBLISHER = 'https://publisher.walrus-testnet.walrus.space'
@@ -37,6 +38,7 @@ const uploadImageToWalrus = async (file: File) => {
 // フォームの状態を定義する型
 export type FormState = {
   username: string
+  bio: string
   image: File | null
 }
 
@@ -47,6 +49,7 @@ export type ActionState = {
   success?: boolean
   fieldErrors?: {
     username?: string[]
+    bio?: string[]
     image?: string[]
   }
 }
@@ -58,6 +61,7 @@ const initialState: ActionState = {
   success: false,
   fieldErrors: {
     username: [],
+    bio: [],
     image: [],
   },
 }
@@ -75,6 +79,16 @@ export default function NewUserPage() {
         return {
           fieldErrors: {
             username: ['ユーザー名は3文字以上で入力してください'],
+          },
+        }
+      }
+
+      // 一応500文字以内とした
+      const bio = formData.get('bio') as string || ''
+      if (bio.length > 500) {
+        return {
+          fieldErrors: {
+            bio: ['自己紹介は500文字以内で入力してください'],
           },
         }
       }
@@ -134,6 +148,7 @@ export default function NewUserPage() {
         SHAKE_ONIGIRI.testnet.userListObjectId,
         username,
         imageBlobId,
+        bio,
       )
       UserModule.delete_user_activity(tx, SHAKE_ONIGIRI.testnet.packageId, userActivity)
 
@@ -227,6 +242,19 @@ export default function NewUserPage() {
             <Input id="username" name="username" placeholder="ユーザー名を入力" required />
             {state?.fieldErrors?.username && state.fieldErrors.username.length > 0 && (
               <p className="text-sm text-red-500">{state.fieldErrors.username[0]}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bio">自己紹介</Label>
+            <Textarea 
+              id="bio" 
+              name="bio" 
+              placeholder="自己紹介を500文字以内で入力してください"
+              rows={3} 
+            />
+            {state?.fieldErrors?.bio && state.fieldErrors.bio.length > 0 && (
+              <p className="text-sm text-red-500">{state.fieldErrors.bio[0]}</p>
             )}
           </div>
 
