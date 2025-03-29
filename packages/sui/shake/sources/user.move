@@ -31,7 +31,7 @@ public fun create_user(
     bio: String,
     clock: &Clock,
     ctx: &mut TxContext,
-): User {
+) {
     let timestamp = clock.timestamp_ms();
     let user = User {
         id: object::new(ctx),
@@ -43,5 +43,5 @@ public fun create_user(
 
     user_list.users.add(ctx.sender(), user.id.to_address());
 
-    user
+    transfer::public_transfer(user, ctx.sender());
 }

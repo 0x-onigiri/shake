@@ -25,7 +25,7 @@ public fun create_post(
     post_blob_id: String,
     clock: &Clock,
     ctx: &mut TxContext,
-): (Post, PostMetadata) {
+) {
     let timestamp = clock.timestamp_ms();
     let post = Post {
         id: object::new(ctx),
@@ -43,5 +43,6 @@ public fun create_post(
         price: option::none(),
     };
 
-    (post, post_metadata)
+    transfer::public_transfer(post, ctx.sender());
+    transfer::public_share_object(post_metadata);
 }
