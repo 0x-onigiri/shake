@@ -8,6 +8,7 @@ import { UserPostBcs, type UserPost } from './sui/user-objects'
 import type { User, Post } from '@/types'
 
 const suiClient = new SuiClient({ url: getFullnodeUrl('testnet') })
+const PUBLISHER = 'https://publisher.walrus-testnet.walrus.space'
 
 export async function fetchUser(
   userAddress: string,
@@ -98,19 +99,49 @@ export async function fetchPost(
     },
   })
   const fields = objResToFields(postObject)
+  const owner = postObject.data?.owner ?? null
+  const authorAddress = owner && typeof owner === 'object' && 'ObjectOwner' in owner ? owner.ObjectOwner : ''
+  
   const post: Post = {
     id: fields.id.id,
-    author: postObject.data?.owner?.AddressOwner || '',
+    author: authorAddress,
     title: fields.title,
   }
   return post
 }
 
-export async function createPost(userObjectId: string, title: string) {
-  const tx = new Transaction()
-  tx.moveCall({
-    target: `${SHAKE_ONIGIRI.testnet.packageId}::blog::create_post`,
-    arguments: [tx.object(userObjectId), tx.pure.string(title), tx.object('0x6')],
-  })
-  return tx
+export async function createPost(userId: string, title: string, content: string) {
+  try {
+    // まずWalrusにコンテンツをアップロード
+    const response = await fetch(`${PUBLISHER}/v1/blobs`, {
+      method: 'PUT',
+      body: content,
+    })
+
+    if (!response.ok) {
+      throw new Error(`アップロード失敗: ${response.statusText}`)
+    }
+
+    const result = await response.json()
+    const blobId = result.newlyCreated?.blobObject?.blobId
+    if (!blobId) {
+      throw new Error('Blob IDが見つかりません')
+    }
+
+    // 次にSuiにポストを作成
+    const tx = new Transaction()
+    tx.moveCall({
+      target: `${SHAKE_ONIGIRI.testnet.packageId}::blog::create_post`,
+      arguments: [
+        tx.object(userId),
+        tx.pure.string(title),
+        tx.pure.string(blobId),
+        tx.object('0x6'),
+      ],
+    })
+
+    return tx
+  } catch (error) {
+    throw error
+  }
 }

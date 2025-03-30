@@ -10,7 +10,7 @@ public struct Post has key, store {
     created_at: u64,
     updated_at: u64,
     // thumbnail_blob_id: String,
-    // post_blob_id: String,
+    post_blob_id: String,
 }
 
 public struct PostMetadata has key, store {
@@ -24,8 +24,7 @@ public struct PostMetadata has key, store {
 public fun create_post(
     _: &User,
     title: String,
-    // thumbnail_blob_id: String,
-    // post_blob_id: String,
+    post_blob_id: String,
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
@@ -33,8 +32,7 @@ public fun create_post(
     let post = Post {
         id: object::new(ctx),
         title,
-        // thumbnail_blob_id,
-        // post_blob_id,
+        post_blob_id,
         created_at: timestamp,
         updated_at: timestamp,
     };
