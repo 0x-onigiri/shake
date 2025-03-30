@@ -47,7 +47,7 @@ function View({
     <div className="space-y-4">
       <Suspense fallback={<div>Loading Posts...</div>}>
         <ErrorBoundary fallback={<div>On no!</div>}>
-          <UserPosts userId={user.id} />
+          <UserPosts walletAddress={walletAddress} />
         </ErrorBoundary>
       </Suspense>
 
@@ -129,13 +129,13 @@ function CreatePost({
 }
 
 function UserPosts({
-  userId,
+  walletAddress,
 }: {
-  userId: string
+  walletAddress: string
 }) {
   const { data: posts } = useSuspenseQuery({
-    queryKey: ['fetchUserPosts', userId],
-    queryFn: () => fetchUserPosts(userId),
+    queryKey: ['fetchUserPosts', walletAddress],
+    queryFn: () => fetchUserPosts(walletAddress),
   })
 
   return (

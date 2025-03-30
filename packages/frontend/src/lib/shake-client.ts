@@ -59,6 +59,35 @@ export async function fetchUserByUserId(
 }
 
 export async function fetchUserPosts(
+  userAddress: string,
+) {
+  const response = await suiClient.getOwnedObjects({
+    owner: userAddress,
+    filter: {
+      MatchAll: [
+        {
+          StructType: `${SHAKE_ONIGIRI.testnet.packageId}::blog::Post`,
+        },
+      ],
+    },
+    options: {
+      showContent: true,
+    },
+  })
+
+  const fields = response.data.map(objResToFields)
+  const posts = fields.map((field) => {
+    const post: Post = {
+      id: field.id.id,
+      author: userAddress,
+      title: field.title,
+    }
+    return post
+  })
+  return posts
+}
+
+export async function fetchUserPosts2(
   userId: string,
 ) {
   const tx = new Transaction()
