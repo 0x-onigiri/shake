@@ -5,9 +5,10 @@
     { "path": "./tsconfig.node.json" }
   ],
    "compilerOptions": {
+    "noEmitOnError": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
     }
   }
 }
