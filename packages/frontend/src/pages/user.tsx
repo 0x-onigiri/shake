@@ -1,29 +1,29 @@
 import { useParams } from 'react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { fetchUserByUserId } from '@/lib/shake-client'
+import { fetchUser } from '@/lib/shake-client'
 import { AGGREGATOR } from '@/constants'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 export default function UserPage() {
-  const { userId } = useParams()
+  const { walletAddress } = useParams()
 
-  if (!userId) {
-    return <div>User IDが指定されていません</div>
+  if (!walletAddress) {
+    return <div>Wallet Addressが指定されていません</div>
   }
 
   return (
-    <View userId={userId} />
+    <View walletAddress={walletAddress} />
   )
 }
 
 function View({
-  userId,
+  walletAddress,
 }: {
-  userId: string
+  walletAddress: string
 }) {
   const { data: user } = useSuspenseQuery({
-    queryKey: ['fetchUserByUserId', userId],
-    queryFn: () => fetchUserByUserId(userId),
+    queryKey: ['fetchUser', walletAddress],
+    queryFn: () => fetchUser(walletAddress),
   })
 
   if (!user) {

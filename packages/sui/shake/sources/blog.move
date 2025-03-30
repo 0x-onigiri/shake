@@ -1,47 +1,49 @@
 module shake::blog;
 
-// === Imports ===
-
-use std::string::{Self, String};
-use sui::{
-    clock::Clock,
-};
-use shake::user::UserActivity;
-
-// === Structs ===
+use shake::user::User;
+use std::string::String;
+use sui::clock::Clock;
 
 public struct Post has key, store {
     id: UID,
-    // 投稿者のアドレス
-    author: address,
-    // 記事タイトル
     title: String,
-    // 記事作成日時（タイムスタンプ）
     created_at: u64,
+    updated_at: u64,
+    // thumbnail_blob_id: String,
+    post_blob_id: String,
 }
 
-fun init(_ctx: &mut TxContext) {}
+public struct PostMetadata has key, store {
+    id: UID,
+    like: u64,
+    tag: vector<String>,
+    price: Option<u64>,
+}
 
-// === Public Functions ===
-
+#[allow(lint(self_transfer))]
 public fun create_post(
-    mut user_activity: UserActivity,
-    title: vector<u8>,
+    _: &User,
+    title: String,
+    post_blob_id: String,
     clock: &Clock,
-    ctx: &mut TxContext
-): UserActivity {
+    ctx: &mut TxContext,
+) {
     let timestamp = clock.timestamp_ms();
-
     let post = Post {
         id: object::new(ctx),
-        author: ctx.sender(),
-        title: string::utf8(title),
+        title,
+        post_blob_id,
         created_at: timestamp,
+        updated_at: timestamp,
     };
 
-    user_activity.record_post_creation(post.id.to_address());
+    let post_metadata = PostMetadata {
+        id: object::new(ctx),
+        like: 0,
+        tag: vector[],
+        price: option::none(),
+    };
 
-    transfer::share_object(post);
-
-    user_activity
+    transfer::public_transfer(post, ctx.sender());
+    transfer::public_share_object(post_metadata);
 }

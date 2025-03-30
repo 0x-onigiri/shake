@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit'
+import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit'
 import { fetchUser, fetchUserPosts } from '@/lib/shake-client'
 import { Card,
   CardContent } from '@/components/ui/card'
@@ -12,6 +12,9 @@ import { ErrorBoundary } from 'react-error-boundary'
 import { PostCard } from '@/components/posts/post-card'
 import { createPost } from '@/lib/shake-client'
 import type { User } from '@/types'
+import { SHAKE_ONIGIRI } from '@/constants'
+import { Textarea } from '@/components/ui/textarea'
+import { Loader2 } from 'lucide-react'
 
 export default function CookPage() {
   const currentAccount = useCurrentAccount()
@@ -47,7 +50,7 @@ function View({
     <div className="space-y-4">
       <Suspense fallback={<div>Loading Posts...</div>}>
         <ErrorBoundary fallback={<div>On no!</div>}>
-          <UserPosts userId={user.id} />
+          <UserPosts walletAddress={walletAddress} />
         </ErrorBoundary>
       </Suspense>
 
@@ -61,10 +64,40 @@ function CreatePost({
 }: {
   user: User
 }) {
-  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction()
+  const client = useSuiClient()
+  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction({
+    execute: async ({ bytes, signature }) =>
+      await client.executeTransactionBlock({
+        transactionBlock: bytes,
+        signature,
+        options: {
+          // Raw effects are required so the effects can be reported back to the wallet
+          showRawEffects: true,
+          // Select additional data to return
+          showObjectChanges: true,
+          showEffects: true,
+        },
+      }),
+  })
   const navigate = useNavigate()
   const [title, setTitle] = useState<string>('')
-  const [_, setDigest] = useState('')
+  const [content, setContent] = useState<string>('')
+  const [images, setImages] = useState<{ name: string, data: string }[]>([])
+  const [pending, setPending] = useState(false)
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string
+      setImages(prev => [...prev, { name: file.name, data: base64 }])
+      const imagePlaceholder = `[画像: ${file.name}]`
+      setContent(prev => prev + '\n' + imagePlaceholder)
+    }
+    reader.readAsDataURL(file)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     if (!user) return
@@ -75,25 +108,44 @@ function CreatePost({
       return
     }
 
-    const tx = await createPost(user.id, title)
+    if (!content.trim()) {
+      alert('本文を入力してください')
+      return
+    }
 
-    signAndExecuteTransaction(
-      {
-        transaction: tx,
-        chain: 'sui:testnet',
-      },
-      {
-        onSuccess: (result) => {
-          console.log('executed transaction', result)
-          setDigest(result.digest)
-          // window.open(`https://testnet.suivision.xyz/txblock/${result.digest}?tab=Events`, '_blank', 'noopener,noreferrer')
-          navigate('/')
+    let finalContent = content
+    images.forEach((image) => {
+      finalContent = finalContent.replace(`[画像: ${image.name}]`, image.data)
+    })
+
+    try {
+      setPending(true)
+      const tx = await createPost(user.id, title, finalContent)
+
+      signAndExecuteTransaction(
+        {
+          transaction: tx,
+          chain: 'sui:testnet',
         },
-        onError: (error) => {
-          console.error('error', error)
+        {
+          onSuccess: (result) => {
+            console.log('executed transaction', result)
+            const postId = result.objectChanges?.find(change =>
+              change.type === 'created'
+              && change.objectType === `${SHAKE_ONIGIRI.testnet.packageId}::blog::Post`,
+            )?.objectId
+            setPending(false)
+            navigate(`/${postId}`)
+          },
+          onError: (error) => {
+            console.error('error', error)
+          },
         },
-      },
-    )
+      )
+    }
+    catch (error) {
+      console.error('error', error)
+    }
   }
 
   return (
@@ -114,12 +166,66 @@ function CreatePost({
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="content">本文</Label>
+              <Textarea
+                id="content"
+                value={content}
+                onChange={e => setContent(e.target.value)}
+                placeholder="本文を入力"
+                className="h-[400px]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="image">画像をアップロード</Label>
+              <Input
+                id="image"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
+              {images.length > 0 && (
+                <div className="grid grid-cols-4 gap-4 mt-4">
+                  {images.map((image, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={image.data}
+                        alt={image.name}
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImages(prev => prev.filter((_, i) => i !== index))
+                          setContent(prev => prev.replace(`[画像: ${image.name}]`, ''))
+                        }}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <Button
               type="submit"
               className="w-full"
               onClick={handleSubmit}
+              disabled={pending}
             >
-              Create
+              {pending
+                ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  )
+                : (
+                    'Create'
+                  )}
             </Button>
           </form>
         </CardContent>
@@ -129,13 +235,13 @@ function CreatePost({
 }
 
 function UserPosts({
-  userId,
+  walletAddress,
 }: {
-  userId: string
+  walletAddress: string
 }) {
   const { data: posts } = useSuspenseQuery({
-    queryKey: ['fetchUserPosts', userId],
-    queryFn: () => fetchUserPosts(userId),
+    queryKey: ['fetchUserPosts', walletAddress],
+    queryFn: () => fetchUserPosts(walletAddress),
   })
 
   return (

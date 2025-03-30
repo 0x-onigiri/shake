@@ -32,7 +32,7 @@ export function Header() {
           <ConnectModal
             trigger={(
               <Button>
-                Connect Wallet to Cook
+                Connect Wallet
               </Button>
             )}
             open={open}
@@ -161,6 +161,7 @@ function UserInfo({
   if (!user) return null
 
   return (
-    <span>{user.username}</span>
+    <Link to={`/user/${walletAddress}`} className="font-bold">{user.username}</Link>
+
   )
 }

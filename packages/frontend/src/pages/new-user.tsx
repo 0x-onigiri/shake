@@ -10,7 +10,7 @@ import { useSignAndExecuteTransaction } from '@mysten/dapp-kit'
 import { Transaction } from '@mysten/sui/transactions'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { UserModule } from '@/lib/sui/user-functions'
-import { Textarea } from "@/components/ui/textarea"
+import { Textarea } from '@/components/ui/textarea'
 
 // Walrus Testnetのパブリッシャーとアグリゲーターのエンドポイント
 const PUBLISHER = 'https://publisher.walrus-testnet.walrus.space'
@@ -142,7 +142,7 @@ export default function NewUserPage() {
 
       const tx = new Transaction()
 
-      const [userActivity] = UserModule.create_new_user(
+      UserModule.create_user(
         tx,
         SHAKE_ONIGIRI.testnet.packageId,
         SHAKE_ONIGIRI.testnet.userListObjectId,
@@ -150,7 +150,7 @@ export default function NewUserPage() {
         imageBlobId,
         bio,
       )
-      UserModule.delete_user_activity(tx, SHAKE_ONIGIRI.testnet.packageId, userActivity)
+      // UserModule.delete_user_activity(tx, SHAKE_ONIGIRI.testnet.packageId, userActivity)
 
       signAndExecuteTransaction(
         {
@@ -247,11 +247,11 @@ export default function NewUserPage() {
 
           <div className="space-y-2">
             <Label htmlFor="bio">自己紹介</Label>
-            <Textarea 
-              id="bio" 
-              name="bio" 
+            <Textarea
+              id="bio"
+              name="bio"
               placeholder="自己紹介を500文字以内で入力してください"
-              rows={3} 
+              rows={3}
             />
             {state?.fieldErrors?.bio && state.fieldErrors.bio.length > 0 && (
               <p className="text-sm text-red-500">{state.fieldErrors.bio[0]}</p>

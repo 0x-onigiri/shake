@@ -36,7 +36,7 @@ createRoot(document.getElementById('root')!)
                   </RequireWallet>
                 )}
               />
-              <Route path="/user/:userId" element={<UserPage />} />
+              <Route path="/user/:walletAddress" element={<UserPage />} />
               <Route path="/:postId" element={<PostPage />} />
             </Route>
           </Routes>
