@@ -10,31 +10,18 @@ import { CalendarIcon, Clock, Share2Icon } from 'lucide-react'
 import { AGGREGATOR } from '@/constants'
 
 const article = {
-  title: 'AIが変える未来の働き方：2025年のオフィス環境予測',
+  title: 'Web3の未来を切り開くSuiとWalrus——失われたデータ主権性を取り戻す挑戦',
   content: `
-      <p>近年、人工知能（AI）技術の急速な発展により、私たちの働き方は大きく変わりつつあります。特に2025年に向けて、オフィス環境はどのように変化していくのでしょうか。</p>
-      
-      <h2>AIアシスタントの普及</h2>
-      <p>現在でも様々な形で活用されているAIアシスタントですが、2025年にはさらに高度化し、ほぼすべての業務プロセスに組み込まれることが予想されています。会議の自動議事録作成、スケジュール調整、データ分析など、定型業務の多くがAIによって自動化されるでしょう。</p>
-      
-      <h2>ハイブリッドワークの標準化</h2>
-      <p>パンデミック以降、リモートワークとオフィスワークを組み合わせたハイブリッドワークが普及しましたが、2025年にはこのモデルがさらに洗練されます。AIを活用した協働ツールにより、物理的な場所に関係なく、チームのコラボレーションがシームレスに行われるようになります。</p>
-      
-      <h2>パーソナライズされた職場環境</h2>
-      <p>AIが個々の従業員の好みや作業パターンを学習し、照明、温度、デスクの高さなどを自動的に調整する「スマートオフィス」が一般的になるでしょう。これにより、従業員の快適性と生産性が向上します。</p>
-      
-      <h2>継続的なスキルアップデート</h2>
-      <p>技術の進化が加速する中、従業員のスキルを常に最新に保つことが重要になります。AIを活用した学習プラットフォームが、各従業員に最適化されたトレーニングプログラムを提供し、継続的な学習文化を促進します。</p>
-      
-      <h2>課題と展望</h2>
-      <p>AIの導入に伴い、プライバシーやセキュリティの懸念、人間の創造性の役割など、新たな課題も生じています。しかし、適切に管理されれば、AIは人間の能力を拡張し、より創造的で意義のある仕事に集中できる環境を作り出すでしょう。</p>
-      
-      <p>2025年のオフィスは、単なる仕事をする場所ではなく、AIと人間が協働する創造的なハブとなるでしょう。この変革に備え、企業は技術投資だけでなく、組織文化や人材育成の戦略も見直す必要があります。</p>
+      <p>デジタル社会が進展した現在、私たちのあらゆる活動はオンライン化し、その過程で膨大なデータが日々生み出されています。SNSの投稿履歴やオンライン決済情報、位置情報など、これらのデータを蓄積した巨大テック企業は、一国家と同等かそれ以上の影響力を持つようになりました。</p>
+      <br>
+      <br>
+      <p>しかし多くのユーザーは、自分のデータがどこで、どのように使われているかを明確に把握できていません。広告やプロパガンダ、企業間取引など、当事者であるユーザーが知らぬ間にデータを利用される事例も後を絶ちません。</p>
+
+      <figure style="text-align:center;" name="3e0b3b11-f432-4277-bcbe-68ded51e3d29" id="3e0b3b11-f432-4277-bcbe-68ded51e3d29"><a href="https://assets.st-note.com/img/1742966198-63h1tZENDPrb7pYxj4F5acHm.jpg?width=2000&amp;height=2000&amp;fit=bounds&amp;quality=85" aria-label="画像を拡大表示"><img style="margin: 0 auto;" src="https://assets.st-note.com/img/1742966198-63h1tZENDPrb7pYxj4F5acHm.jpg" alt="画像" width="512" height="288" loading="lazy" class="is-slide" data-modal="true"></a><figcaption>『グレート・ハック：SNS史上最悪のスキャンダル』</figcaption></figure>
     `,
   author: {
     name: '田中 智子',
     avatar: '/placeholder.svg?height=40&width=40',
-    title: 'テクノロジーアナリスト',
   },
   publishedAt: '2024年3月15日',
   readTime: '8分',
@@ -128,7 +115,7 @@ function PostDetail({
         </div>
 
         {/* 記事タイトル */}
-        <h1 className="text-3xl md:text-4xl font-bold leading-tight">{post.title}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold leading-tight">{article.title}</h1>
 
         {/* 著者情報 */}
         <div className="flex items-center gap-3">

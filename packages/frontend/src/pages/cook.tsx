@@ -14,6 +14,7 @@ import { createPost } from '@/lib/shake-client'
 import type { User } from '@/types'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { Textarea } from '@/components/ui/textarea'
+import { Loader2 } from 'lucide-react'
 
 export default function CookPage() {
   const currentAccount = useCurrentAccount()
@@ -81,7 +82,8 @@ function CreatePost({
   const navigate = useNavigate()
   const [title, setTitle] = useState<string>('')
   const [content, setContent] = useState<string>('')
-  const [images, setImages] = useState<{ name: string; data: string }[]>([])
+  const [images, setImages] = useState<{ name: string, data: string }[]>([])
+  const [pending, setPending] = useState(false)
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -112,11 +114,12 @@ function CreatePost({
     }
 
     let finalContent = content
-    images.forEach(image => {
+    images.forEach((image) => {
       finalContent = finalContent.replace(`[画像: ${image.name}]`, image.data)
     })
 
     try {
+      setPending(true)
       const tx = await createPost(user.id, title, finalContent)
 
       signAndExecuteTransaction(
@@ -127,19 +130,20 @@ function CreatePost({
         {
           onSuccess: (result) => {
             console.log('executed transaction', result)
-            const postId = result.objectChanges?.find(change => 
-              change.type === 'created' && 
-              change.objectType === `${SHAKE_ONIGIRI.testnet.packageId}::blog::Post`
+            const postId = result.objectChanges?.find(change =>
+              change.type === 'created'
+              && change.objectType === `${SHAKE_ONIGIRI.testnet.packageId}::blog::Post`,
             )?.objectId
-            console.log('postId', postId)
-            navigate(``)
+            setPending(false)
+            navigate(`/${postId}`)
           },
           onError: (error) => {
             console.error('error', error)
           },
         },
       )
-    } catch (error) {
+    }
+    catch (error) {
       console.error('error', error)
     }
   }
@@ -210,8 +214,18 @@ function CreatePost({
               type="submit"
               className="w-full"
               onClick={handleSubmit}
+              disabled={pending}
             >
-              Create
+              {pending
+                ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  )
+                : (
+                    'Create'
+                  )}
             </Button>
           </form>
         </CardContent>

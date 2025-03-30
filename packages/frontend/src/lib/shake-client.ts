@@ -100,48 +100,45 @@ export async function fetchPost(
   })
   const fields = objResToFields(postObject)
   const owner = postObject.data?.owner ?? null
-  const authorAddress = owner && typeof owner === 'object' && 'ObjectOwner' in owner ? owner.ObjectOwner : ''
-  
+  // const authorAddress = owner && typeof owner === 'object' && 'ObjectOwner' in owner ? owner.ObjectOwner : ''
+
   const post: Post = {
     id: fields.id.id,
-    author: authorAddress,
+    // author: authorAddress,
+    author: postObject.data?.owner?.AddressOwner || '',
     title: fields.title,
   }
   return post
 }
 
 export async function createPost(userId: string, title: string, content: string) {
-  try {
-    // まずWalrusにコンテンツをアップロード
-    const response = await fetch(`${PUBLISHER}/v1/blobs`, {
-      method: 'PUT',
-      body: content,
-    })
+  // まずWalrusにコンテンツをアップロード
+  const response = await fetch(`${PUBLISHER}/v1/blobs`, {
+    method: 'PUT',
+    body: content,
+  })
 
-    if (!response.ok) {
-      throw new Error(`アップロード失敗: ${response.statusText}`)
-    }
-
-    const result = await response.json()
-    const blobId = result.newlyCreated?.blobObject?.blobId
-    if (!blobId) {
-      throw new Error('Blob IDが見つかりません')
-    }
-
-    // 次にSuiにポストを作成
-    const tx = new Transaction()
-    tx.moveCall({
-      target: `${SHAKE_ONIGIRI.testnet.packageId}::blog::create_post`,
-      arguments: [
-        tx.object(userId),
-        tx.pure.string(title),
-        tx.pure.string(blobId),
-        tx.object('0x6'),
-      ],
-    })
-
-    return tx
-  } catch (error) {
-    throw error
+  if (!response.ok) {
+    throw new Error(`アップロード失敗: ${response.statusText}`)
   }
+
+  const result = await response.json()
+  const blobId = result.newlyCreated?.blobObject?.blobId || result.alreadyCertified.blobId
+  if (!blobId) {
+    throw new Error('Blob IDが見つかりません')
+  }
+
+  // 次にSuiにポストを作成
+  const tx = new Transaction()
+  tx.moveCall({
+    target: `${SHAKE_ONIGIRI.testnet.packageId}::blog::create_post`,
+    arguments: [
+      tx.object(userId),
+      tx.pure.string(title),
+      tx.pure.string(blobId),
+      tx.object('0x6'),
+    ],
+  })
+
+  return tx
 }
