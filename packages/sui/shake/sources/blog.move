@@ -6,6 +6,7 @@ use sui::clock::Clock;
 
 public struct Post has key, store {
     id: UID,
+    author: address,
     title: String,
     created_at: u64,
     updated_at: u64,
@@ -32,6 +33,7 @@ public fun create_post(
     let timestamp = clock.timestamp_ms();
     let post = Post {
         id: object::new(ctx),
+        author: ctx.sender(),
         title,
         // thumbnail_blob_id,
         // post_blob_id,

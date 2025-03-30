@@ -79,7 +79,7 @@ export async function fetchUserPosts(
   const posts = fields.map((field) => {
     const post: Post = {
       id: field.id.id,
-      author: userAddress,
+      author: field.author,
       title: field.title,
     }
     return post
