@@ -6,7 +6,7 @@ use sui::table::{Self, Table};
 
 public struct User has key, store {
     id: UID,
-    user_name: String,
+    name: String,
     profile_image_id: String,
     bio: String,
     created_at: u64,
@@ -24,24 +24,32 @@ fun init(ctx: &mut TxContext) {
     });
 }
 
+#[allow(lint(self_transfer))]
 public fun create_user(
     user_list: &mut UserList,
-    user_name: String,
+    name: String,
     profile_image_id: String,
     bio: String,
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
+    let sender = ctx.sender();
+    assert!(!user_list.users.contains(sender), 0);
+
     let timestamp = clock.timestamp_ms();
     let user = User {
         id: object::new(ctx),
-        user_name,
+        name,
         profile_image_id,
         bio,
         created_at: timestamp,
     };
 
-    user_list.users.add(ctx.sender(), user.id.to_address());
+    user_list.users.add(sender, user.id.to_address());
 
-    transfer::public_transfer(user, ctx.sender());
+    transfer::public_transfer(user, sender);
+}
+
+public(package) fun users(self: &UserList): &Table<address, address> {
+    &self.users
 }

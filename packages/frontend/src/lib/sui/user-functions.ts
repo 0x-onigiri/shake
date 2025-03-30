@@ -39,7 +39,7 @@ export const UserModule
     })
   },
 
-  create_new_user: (
+  create_user: (
     tx: Transaction,
     packageId: string,
     userList: string,
@@ -48,7 +48,7 @@ export const UserModule
     bio: string,
   ): TransactionResult => {
     return tx.moveCall({
-      target: `${packageId}::user::create_new_user`,
+      target: `${packageId}::user::create_user`,
       arguments: [
         tx.object(userList),
         tx.pure.string(userName),

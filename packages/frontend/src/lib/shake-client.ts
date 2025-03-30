@@ -10,30 +10,32 @@ import type { User, Post } from '@/types'
 const suiClient = new SuiClient({ url: getFullnodeUrl('testnet') })
 
 export async function fetchUser(
-  address: string,
+  userAddress: string,
 ) {
-  console.log('fetchUser', address)
-  const tx = new Transaction()
-
-  UserModule.get_user_address(
-    tx,
-    SHAKE_ONIGIRI.testnet.packageId,
-    SHAKE_ONIGIRI.testnet.userListObjectId,
-    address,
-  )
-
-  const blockReturns = await devInspectAndGetReturnValues(suiClient, tx, [
-    [
-      bcs.Address,
-    ],
-  ])
-  const userId = blockReturns[0][0] as string
-
-  if (userId === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+  const response = await suiClient.getOwnedObjects({
+    owner: userAddress,
+    filter: {
+      MatchAll: [
+        {
+          StructType: `${SHAKE_ONIGIRI.testnet.packageId}::user::User`,
+        },
+      ],
+    },
+    options: {
+      showContent: true,
+    },
+  })
+  const userObject = response.data[0]
+  if (!userObject) {
     return null
   }
-
-  const user = await fetchUserByUserId(userId)
+  const fields = objResToFields(userObject)
+  const user: User = {
+    id: fields.id.id,
+    username: fields.name,
+    image: fields.profile_image_id,
+    bio: fields.bio,
+  }
   return user
 }
 
@@ -116,16 +118,11 @@ export async function fetchPost(
   return post
 }
 
-export async function createPost(userId: string, title: string) {
+export async function createPost(userObjectId: string, title: string) {
   const tx = new Transaction()
-  const [userActivity1] = UserModule.existing_user_activity(
-    tx, SHAKE_ONIGIRI.testnet.packageId, userId,
-  )
-  const [userActivity2] = tx.moveCall({
+  tx.moveCall({
     target: `${SHAKE_ONIGIRI.testnet.packageId}::blog::create_post`,
-    arguments: [userActivity1, tx.pure.string(title), tx.object('0x6')],
+    arguments: [tx.object(userObjectId), tx.pure.string(title), tx.object('0x6')],
   })
-  UserModule.delete_user_activity(tx, SHAKE_ONIGIRI.testnet.packageId, userActivity2)
-
   return tx
 }

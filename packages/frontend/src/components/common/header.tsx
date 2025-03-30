@@ -32,7 +32,7 @@ export function Header() {
           <ConnectModal
             trigger={(
               <Button>
-                Connect Wallet to Cook
+                Connect Wallet
               </Button>
             )}
             open={open}

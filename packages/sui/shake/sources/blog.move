@@ -1,6 +1,7 @@
 module shake::blog;
 
-use std::string::{String};
+use shake::user::User;
+use std::string::String;
 use sui::clock::Clock;
 
 public struct Post has key, store {
@@ -8,8 +9,8 @@ public struct Post has key, store {
     title: String,
     created_at: u64,
     updated_at: u64,
-    thumbnail_blob_id: String,
-    post_blob_id: String,
+    // thumbnail_blob_id: String,
+    // post_blob_id: String,
 }
 
 public struct PostMetadata has key, store {
@@ -19,10 +20,12 @@ public struct PostMetadata has key, store {
     price: Option<u64>,
 }
 
+#[allow(lint(self_transfer))]
 public fun create_post(
+    _: &User,
     title: String,
-    thumbnail_blob_id: String,
-    post_blob_id: String,
+    // thumbnail_blob_id: String,
+    // post_blob_id: String,
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
@@ -30,8 +33,8 @@ public fun create_post(
     let post = Post {
         id: object::new(ctx),
         title,
-        thumbnail_blob_id,
-        post_blob_id,
+        // thumbnail_blob_id,
+        // post_blob_id,
         created_at: timestamp,
         updated_at: timestamp,
     };
