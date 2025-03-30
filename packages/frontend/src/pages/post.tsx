@@ -57,7 +57,7 @@ function PostDetail({
         by
         {' '}
         <Button asChild variant="link" className="p-0">
-          <Link to={`/user/${user.id}`}>
+          <Link to={`/user/${post.author}`}>
             {user.username}
           </Link>
         </Button>

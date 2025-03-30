@@ -79,49 +79,7 @@ export async function fetchUserPosts(
   const posts = fields.map((field) => {
     const post: Post = {
       id: field.id.id,
-      author: field.author,
-      title: field.title,
-    }
-    return post
-  })
-  return posts
-}
-
-export async function fetchUserPosts2(
-  userId: string,
-) {
-  const tx = new Transaction()
-
-  UserModule.get_posts(
-    tx,
-    SHAKE_ONIGIRI.testnet.packageId,
-    userId,
-  )
-
-  const blockReturns = await devInspectAndGetReturnValues(suiClient, tx, [
-    [
-      bcs.vector(UserPostBcs),
-      bcs.Bool,
-      bcs.U64,
-    ],
-  ])
-
-  const postsRaw = blockReturns[0][0] as UserPost[]
-
-  const postAddresses = postsRaw.map(post => post.post_address)
-
-  const response = await suiClient.multiGetObjects({
-    ids: postAddresses,
-    options: {
-      showContent: true,
-    },
-  })
-
-  const fields = response.map(objResToFields)
-  const posts = fields.map((field) => {
-    const post: Post = {
-      id: field.id.id,
-      author: field.author,
+      author: userAddress,
       title: field.title,
     }
     return post
@@ -136,12 +94,13 @@ export async function fetchPost(
     id: postId,
     options: {
       showContent: true,
+      showOwner: true,
     },
   })
   const fields = objResToFields(postObject)
   const post: Post = {
     id: fields.id.id,
-    author: fields.author,
+    author: postObject.data?.owner?.AddressOwner || '',
     title: fields.title,
   }
   return post

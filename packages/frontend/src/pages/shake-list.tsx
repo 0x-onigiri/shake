@@ -25,6 +25,13 @@ const postListQuery = graphql(`
         asMoveObject {
           contents { json}
         }
+        owner {
+          ... on AddressOwner {
+            owner {
+              address
+            }
+          }
+        }
       }
     }
   }
@@ -61,7 +68,11 @@ export default function ShakeListPage() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <ul className="grid grid-cols-3 gap-4">
         {posts.map((p) => {
-          const post = p?.asMoveObject?.contents?.json as Post
+          const owner = p?.owner?.owner?.address
+          const post = {
+            ...p?.asMoveObject?.contents?.json,
+            author: owner,
+          } as Post
           return (
             <li key={post.id}>
               <PostCard post={post} />

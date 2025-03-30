@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit'
+import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit'
 import { fetchUser, fetchUserPosts } from '@/lib/shake-client'
 import { Card,
   CardContent } from '@/components/ui/card'
@@ -12,6 +12,7 @@ import { ErrorBoundary } from 'react-error-boundary'
 import { PostCard } from '@/components/posts/post-card'
 import { createPost } from '@/lib/shake-client'
 import type { User } from '@/types'
+import { SHAKE_ONIGIRI } from '@/constants'
 
 export default function CookPage() {
   const currentAccount = useCurrentAccount()
@@ -61,7 +62,21 @@ function CreatePost({
 }: {
   user: User
 }) {
-  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction()
+  const client = useSuiClient()
+  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction({
+    execute: async ({ bytes, signature }) =>
+      await client.executeTransactionBlock({
+        transactionBlock: bytes,
+        signature,
+        options: {
+          // Raw effects are required so the effects can be reported back to the wallet
+          showRawEffects: true,
+          // Select additional data to return
+          showObjectChanges: true,
+          showEffects: true,
+        },
+      }),
+  })
   const navigate = useNavigate()
   const [title, setTitle] = useState<string>('')
   const [_, setDigest] = useState('')
@@ -86,8 +101,10 @@ function CreatePost({
         onSuccess: (result) => {
           console.log('executed transaction', result)
           setDigest(result.digest)
+          const postId = result.objectChanges?.find(change => change.type === 'created' && change.objectType === `${SHAKE_ONIGIRI.testnet.packageId}::blog::Post`)?.objectId
+          console.log('postId', postId)
           // window.open(`https://testnet.suivision.xyz/txblock/${result.digest}?tab=Events`, '_blank', 'noopener,noreferrer')
-          navigate('/')
+          navigate(`/${postId}`)
         },
         onError: (error) => {
           console.error('error', error)
