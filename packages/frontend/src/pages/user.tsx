@@ -1,8 +1,11 @@
+import { Suspense } from 'react'
 import { useParams } from 'react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { fetchUser } from '@/lib/shake-client'
 import { AGGREGATOR } from '@/constants'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { fetchUser, fetchUserPosts } from '@/lib/shake-client'
+import { ErrorBoundary } from 'react-error-boundary'
+import { PostCard } from '@/components/posts/post-card'
 
 export default function UserPage() {
   const { walletAddress } = useParams()
@@ -42,6 +45,41 @@ function View({
           <p style={{ whiteSpace: 'pre-wrap' }} className="text-gray-700 text-start leading-relaxed">{user.bio}</p>
         </div>
       )}
+      <Suspense fallback={<div>Loading Posts...</div>}>
+        <ErrorBoundary fallback={<div>On no!</div>}>
+          <UserPosts walletAddress={walletAddress} />
+        </ErrorBoundary>
+      </Suspense>
+    </div>
+  )
+}
+
+function UserPosts({
+  walletAddress,
+}: {
+  walletAddress: string
+}) {
+  const { data: posts } = useSuspenseQuery({
+    queryKey: ['fetchUserPosts', walletAddress],
+    queryFn: () => fetchUserPosts(walletAddress),
+  })
+
+  return (
+    <div>
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">
+        Your Posts
+      </h1>
+      <ul className="grid grid-cols-3 gap-4">
+        {
+          posts.map((post) => {
+            return (
+              <li key={post.id}>
+                <PostCard post={post} />
+              </li>
+            )
+          })
+        }
+      </ul>
     </div>
   )
 }
