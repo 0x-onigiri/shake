@@ -11,11 +11,8 @@ import { Transaction } from '@mysten/sui/transactions'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { UserModule } from '@/lib/sui/user-functions'
 import { Textarea } from '@/components/ui/textarea'
+import { PUBLISHER } from '@/constants'
 
-// Walrus Testnetのパブリッシャーとアグリゲーターのエンドポイント
-const PUBLISHER = 'https://publisher.walrus-testnet.walrus.space'
-
-// 画像をWalrusにアップロード
 const uploadImageToWalrus = async (file: File) => {
   try {
     const response = await fetch(`${PUBLISHER}/v1/blobs`, {

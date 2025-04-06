@@ -1,14 +1,11 @@
 import { Transaction } from '@mysten/sui/transactions'
 import { SHAKE_ONIGIRI } from '@/constants'
-import { UserModule } from '@/lib/sui/user-functions'
-import { devInspectAndGetReturnValues, objResToFields } from '@polymedia/suitcase-core'
+import { objResToFields } from '@polymedia/suitcase-core'
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client'
-import { bcs } from '@mysten/sui/bcs'
-import { UserPostBcs, type UserPost } from './sui/user-objects'
 import type { User, Post } from '@/types'
+import { PUBLISHER, AGGREGATOR } from '@/constants'
 
 const suiClient = new SuiClient({ url: getFullnodeUrl('testnet') })
-const PUBLISHER = 'https://publisher.walrus-testnet.walrus.space'
 
 export async function fetchUser(
   userAddress: string,
@@ -82,6 +79,7 @@ export async function fetchUserPosts(
       id: field.id.id,
       author: userAddress,
       title: field.title,
+      postBlobId: field.post_blob_id,
     }
     return post
   })
@@ -99,7 +97,6 @@ export async function fetchPost(
     },
   })
   const fields = objResToFields(postObject)
-  const owner = postObject.data?.owner ?? null
   // const authorAddress = owner && typeof owner === 'object' && 'ObjectOwner' in owner ? owner.ObjectOwner : ''
 
   const post: Post = {
@@ -107,12 +104,31 @@ export async function fetchPost(
     // author: authorAddress,
     author: postObject.data?.owner?.AddressOwner || '',
     title: fields.title,
+    postBlobId: fields.post_blob_id,
   }
   return post
 }
 
+export async function fetchPostContent(
+  blobId: string,
+) {
+  try {
+    const response = await fetch(`${AGGREGATOR}/v1/blobs/${blobId}`)
+
+    if (!response.ok) {
+      throw new Error(
+        `コンテンツの取得に失敗しました: ${response.statusText}`,
+      )
+    }
+
+    return await response.text()
+  }
+  catch (err) {
+    console.error('コンテンツ取得エラー:', err)
+  }
+}
+
 export async function createPost(userId: string, title: string, content: string) {
-  // まずWalrusにコンテンツをアップロード
   const response = await fetch(`${PUBLISHER}/v1/blobs`, {
     method: 'PUT',
     body: content,
@@ -128,7 +144,6 @@ export async function createPost(userId: string, title: string, content: string)
     throw new Error('Blob IDが見つかりません')
   }
 
-  // 次にSuiにポストを作成
   const tx = new Transaction()
   tx.moveCall({
     target: `${SHAKE_ONIGIRI.testnet.packageId}::blog::create_post`,
