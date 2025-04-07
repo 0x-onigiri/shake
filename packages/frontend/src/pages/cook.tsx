@@ -1,6 +1,8 @@
 import { useState, Suspense } from 'react'
 import { useNavigate } from 'react-router'
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit'
+import { getAllowlistedKeyServers, SealClient } from '@mysten/seal'
+import { fromHex, toHex } from '@mysten/sui/utils'
 import { fetchUser } from '@/lib/shake-client'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createPost } from '@/lib/shake-client'
@@ -50,17 +52,21 @@ function CreatePost({
 }: {
   user: User
 }) {
-  const client = useSuiClient()
+  const suiClient = useSuiClient()
+  const sealClient = new SealClient({
+    suiClient,
+    serverObjectIds: getAllowlistedKeyServers('testnet'),
+    verifyKeyServers: false,
+  })
+
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction({
     execute: async ({ bytes, signature }) =>
-      await client.executeTransactionBlock({
+      await suiClient.executeTransactionBlock({
         transactionBlock: bytes,
         signature,
         options: {
-          // Raw effects are required so the effects can be reported back to the wallet
-          showRawEffects: true,
-          // Select additional data to return
           showObjectChanges: true,
+          showRawEffects: true,
           showEffects: true,
         },
       }),
@@ -84,7 +90,24 @@ function CreatePost({
 
     try {
       setPending(true)
-      const tx = await createPost(user.id, title, content)
+
+      const nonce = crypto.getRandomValues(new Uint8Array(5))
+      const policyObjextBytes = fromHex(SHAKE_ONIGIRI.testnet.postPaymentObjectId)
+      const id = toHex(
+        new Uint8Array([
+          ...policyObjextBytes,
+          ...nonce,
+        ]),
+      )
+      const dataToEncrypt = new TextEncoder().encode(content)
+      const { encryptedObject: encryptedBytes } = await sealClient.encrypt({
+        threshold: 2,
+        packageId: SHAKE_ONIGIRI.testnet.packageId,
+        id,
+        data: dataToEncrypt,
+      })
+
+      const tx = await createPost(user.id, title, encryptedBytes)
 
       signAndExecuteTransaction(
         {
@@ -118,7 +141,6 @@ function CreatePost({
         New Shake
       </h1>
       <Editor onSave={handleSave} pending={pending} />
-
     </div>
   )
 }

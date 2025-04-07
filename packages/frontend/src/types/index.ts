@@ -10,4 +10,10 @@ export type Post = {
   author: string
   title: string
   postBlobId: string
+  metadata?: PostMetadata
+}
+
+export type PostMetadata = {
+  id: string
+  price: number
 }

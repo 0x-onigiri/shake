@@ -1,8 +1,8 @@
-import { Transaction } from '@mysten/sui/transactions'
+import { Transaction, TransactionArgument } from '@mysten/sui/transactions'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { objResToFields } from '@polymedia/suitcase-core'
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client'
-import type { User, Post } from '@/types'
+import type { User, Post, PostMetadata } from '@/types'
 import { PUBLISHER, AGGREGATOR } from '@/constants'
 
 const suiClient = new SuiClient({ url: getFullnodeUrl('testnet') })
@@ -99,13 +99,30 @@ export async function fetchPost(
   const fields = objResToFields(postObject)
   // const authorAddress = owner && typeof owner === 'object' && 'ObjectOwner' in owner ? owner.ObjectOwner : ''
 
+  const postMetadataObject = await suiClient.getObject({
+    id: fields.post_metadata_id,
+    options: {
+      showContent: true,
+      showOwner: true,
+    },
+  })
+  const postMetadataFields = objResToFields(postMetadataObject)
+  const postMetadata: PostMetadata = {
+    id: postMetadataFields.id.id,
+    price: postMetadataFields.price ? Number(postMetadataFields.price) : 0,
+  }
+
   const post: Post = {
     id: fields.id.id,
     // author: authorAddress,
     author: postObject.data?.owner?.AddressOwner || '',
     title: fields.title,
     postBlobId: fields.post_blob_id,
+    metadata: postMetadata,
   }
+
+  console.log('post', post)
+
   return post
 }
 
@@ -128,10 +145,11 @@ export async function fetchPostContent(
   }
 }
 
-export async function createPost(userId: string, title: string, content: string) {
+// TODO: contentが暗号化前提になっているが、無料記事の場合は暗号化しないようにする（別関数でもok）
+export async function createPost(userId: string, title: string, encryptedContent: Uint8Array) {
   const response = await fetch(`${PUBLISHER}/v1/blobs`, {
     method: 'PUT',
-    body: content,
+    body: encryptedContent,
   })
 
   if (!response.ok) {
@@ -144,6 +162,8 @@ export async function createPost(userId: string, title: string, content: string)
     throw new Error('Blob IDが見つかりません')
   }
 
+  console.log('Blob ID:', blobId)
+
   const tx = new Transaction()
   tx.moveCall({
     target: `${SHAKE_ONIGIRI.testnet.packageId}::blog::create_post`,
@@ -152,6 +172,31 @@ export async function createPost(userId: string, title: string, content: string)
       tx.pure.string(title),
       tx.pure.string(blobId),
       tx.object('0x6'),
+    ],
+  })
+
+  return tx
+}
+
+export async function purchasePost(tx: Transaction, postMetadataObjectId: string, suiCoin: TransactionArgument) {
+  tx.moveCall({
+    target: `${SHAKE_ONIGIRI.testnet.packageId}::blog::purchase_post`,
+    arguments: [
+      tx.object(SHAKE_ONIGIRI.testnet.postPaymentObjectId),
+      tx.object(postMetadataObjectId),
+      suiCoin,
+    ],
+  })
+
+  return tx
+}
+
+export async function isPurchasedPost(tx: Transaction, postMetadataObjectId: string) {
+  tx.moveCall({
+    target: `${SHAKE_ONIGIRI.testnet.packageId}::blog::is_purchased_post`,
+    arguments: [
+      tx.object(SHAKE_ONIGIRI.testnet.postPaymentObjectId),
+      tx.object(postMetadataObjectId),
     ],
   })
 
