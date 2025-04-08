@@ -139,7 +139,7 @@ export default function NewUserPage() {
 
       const tx = new Transaction()
 
-      UserModule.create_user(
+      UserModule.createUser(
         tx,
         SHAKE_ONIGIRI.testnet.packageId,
         SHAKE_ONIGIRI.testnet.userListObjectId,
@@ -147,7 +147,6 @@ export default function NewUserPage() {
         imageBlobId,
         bio,
       )
-      // UserModule.delete_user_activity(tx, SHAKE_ONIGIRI.testnet.packageId, userActivity)
 
       signAndExecuteTransaction(
         {
