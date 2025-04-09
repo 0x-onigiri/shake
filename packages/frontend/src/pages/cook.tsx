@@ -9,6 +9,7 @@ import { createPost } from '@/lib/shake-client'
 import type { User } from '@/types'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { Editor } from '@/components/posts/editor'
+import { Transaction } from '@mysten/sui/transactions'
 
 export default function CookPage() {
   const currentAccount = useCurrentAccount()
@@ -107,7 +108,8 @@ function CreatePost({
         data: dataToEncrypt,
       })
 
-      const tx = await createPost(user.id, title, encryptedBytes)
+      const tx = new Transaction()
+      await createPost(tx, user.id, title, encryptedBytes)
 
       signAndExecuteTransaction(
         {
@@ -117,10 +119,15 @@ function CreatePost({
         {
           onSuccess: (result) => {
             console.log('executed transaction', result)
-            const postId = result.objectChanges?.find(change =>
+            const objChange = result.objectChanges?.find(change =>
               change.type === 'created'
               && change.objectType === `${SHAKE_ONIGIRI.testnet.packageId}::blog::Post`,
-            )?.objectId
+            )
+            const postId = objChange && objChange.type === 'created' ? objChange.objectId : null
+            if (!postId) {
+              console.error('Post ID not found')
+              return
+            }
             setPending(false)
             navigate(`/${postId}`)
           },

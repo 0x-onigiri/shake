@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
-import { useSignPersonalMessage, useCurrentAccount, useSignAndExecuteTransaction, useSuiClient, useCurrentWallet } from '@mysten/dapp-kit'
+import { useSignPersonalMessage, useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit'
 import { getAllowlistedKeyServers, SealClient, SessionKey } from '@mysten/seal'
 import { Transaction } from '@mysten/sui/transactions'
 import { fromHex } from '@mysten/sui/utils'
 import { fetchPost } from '@/lib/shake-client'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import type { Post } from '@/types'
-import { fetchUser, purchasePost, isPurchasedPost } from '@/lib/shake-client'
+import { fetchUser } from '@/lib/shake-client'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { AGGREGATOR, SHAKE_ONIGIRI, COINS_TYPE_LIST } from '@/constants'
-import { CalendarIcon, Clock, Share2Icon, Book } from 'lucide-react'
+import { CalendarIcon, Clock, Book } from 'lucide-react'
 import { getInputCoins, downloadAndDecrypt, MoveCallConstructor } from '@/lib/sui/utils'
+import { BlogModule } from '@/lib/sui/blog-functions'
+import { devInspectAndGetExecutionResults } from '@polymedia/suitcase-core'
 
 export default function PostPage() {
   const { postId } = useParams()
@@ -88,15 +90,19 @@ function PostDetail({
   })
 
   const [decryptedFileUrls, setDecryptedFileUrls] = useState<string[]>([])
-  const [error, setError] = useState<string | null>(null)
+  const [, setError] = useState<string | null>(null)
   const [currentSessionKey, setCurrentSessionKey] = useState<SessionKey | null>(null)
-  const [reloadKey, setReloadKey] = useState(0)
+  const [, setReloadKey] = useState(0)
   const [purchased, setPurchased] = useState(false)
 
   console.log('decryptedFileUrls', decryptedFileUrls)
 
   const onView = async () => {
     console.log('currentSessionKey', currentSessionKey)
+    if (!post.metadata) {
+      return
+    }
+
     if (
       currentSessionKey
       && !currentSessionKey.isExpired()
@@ -118,8 +124,6 @@ function PostDetail({
 
     setCurrentSessionKey(null)
 
-    console.log(walletAddress, SHAKE_ONIGIRI.testnet.packageId, TTL_MIN)
-
     const sessionKey = new SessionKey({
       address: walletAddress,
       packageId: SHAKE_ONIGIRI.testnet.packageId,
@@ -134,6 +138,9 @@ function PostDetail({
         {
           onSuccess: async (result) => {
             console.log('result', result)
+            if (!post.metadata) {
+              return
+            }
             await sessionKey.setPersonalMessageSignature(result.signature)
             const moveCallConstructor = await constructMoveCall(SHAKE_ONIGIRI.testnet.packageId, SHAKE_ONIGIRI.testnet.postPaymentObjectId, post.metadata.id)
             await downloadAndDecrypt(
@@ -155,12 +162,16 @@ function PostDetail({
         },
       )
     }
-    catch (error: any) {
+    catch (error) {
       console.error('Error:', error)
     }
   }
 
   const purchase = async () => {
+    if (!post.metadata) {
+      return
+    }
+
     const tx = new Transaction()
     const [suiCoin] = await getInputCoins(
       tx,
@@ -169,8 +180,7 @@ function PostDetail({
       COINS_TYPE_LIST.SUI,
       post.metadata.price,
     )
-
-    purchasePost(tx, post.metadata.id, suiCoin)
+    BlogModule.purchasePost(tx, SHAKE_ONIGIRI.testnet.packageId, SHAKE_ONIGIRI.testnet.postPaymentObjectId, post.metadata.id, suiCoin)
 
     signAndExecuteTransaction(
       {
@@ -189,14 +199,28 @@ function PostDetail({
   }
 
   const isPurchased = async () => {
-    const tx = new Transaction()
-    isPurchasedPost(tx, post.metadata.id)
-    const res = await suiClient.devInspectTransactionBlock({
-      sender: walletAddress,
-      transactionBlock: tx,
-    })
+    if (!post.metadata) {
+      return
+    }
 
-    const result = res.results[0].returnValues[0][0][0]
+    const tx = new Transaction()
+    BlogModule.isPurchasedPost(
+      tx,
+      SHAKE_ONIGIRI.testnet.packageId,
+      SHAKE_ONIGIRI.testnet.postPaymentObjectId,
+      post.metadata.id,
+    )
+
+    const blockResults = await devInspectAndGetExecutionResults(suiClient, tx, walletAddress)
+    const txResults = blockResults[0]
+    if (!txResults.returnValues?.length) {
+      throw Error(`transaction didn't return any values: ${JSON.stringify(txResults, null, 2)}`)
+    }
+
+    const value = txResults.returnValues[0]
+    const valueData = value[0]
+    const result = valueData[0]
+
     setPurchased(result === 1)
   }
 
@@ -250,7 +274,7 @@ function PostDetail({
                   署名して読む
                 </Button>
               )}
-            {post.metadata.price > 0 && !purchased
+            {post.metadata && post.metadata.price > 0 && !purchased
               && (
                 <Button size="sm" className="gap-2" onClick={purchase}>
                   購入

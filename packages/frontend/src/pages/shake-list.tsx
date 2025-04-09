@@ -64,11 +64,12 @@ export default function ShakeListPage() {
     return null
   }
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <ul className="grid grid-cols-3 gap-4">
-        {posts.map((p) => {
-          const owner = p?.owner?.owner?.address
+        {posts.map((p: any) => {
+          const owner = p?.owner.owner?.address
           const post = {
             ...p?.asMoveObject?.contents?.json,
             author: owner,
