@@ -11,6 +11,7 @@ export const BlogModule
     userObjectId: string,
     title: string,
     postBlobId: string,
+    price?: number,
   ): TransactionResult => {
     return tx.moveCall({
       target: `${packageId}::blog::create_post`,
@@ -18,6 +19,7 @@ export const BlogModule
         tx.object(userObjectId),
         tx.pure.string(title),
         tx.pure.string(postBlobId),
+        tx.pure.option('u64', price),
         tx.object('0x6'),
       ],
     })

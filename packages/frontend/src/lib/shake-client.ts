@@ -150,10 +150,37 @@ export async function fetchPostContent(
 }
 
 // TODO: contentが暗号化前提になっているが、無料記事の場合は暗号化しないようにする（別関数でもok）
-export async function createPost(tx: Transaction, userObjectId: string, title: string, encryptedContent: Uint8Array) {
+export async function createPaidPost(tx: Transaction, userObjectId: string, title: string, encryptedContent: Uint8Array, price: number) {
   const response = await fetch(`${PUBLISHER}/v1/blobs`, {
     method: 'PUT',
     body: encryptedContent,
+  })
+
+  if (!response.ok) {
+    throw new Error(`アップロード失敗: ${response.statusText}`)
+  }
+
+  const result = await response.json()
+  const blobId = result.newlyCreated?.blobObject?.blobId || result.alreadyCertified.blobId
+  if (!blobId) {
+    throw new Error('Blob IDが見つかりません')
+  }
+
+  console.log('Blob ID:', blobId)
+
+  return BlogModule.createPost(
+    tx,
+    SHAKE_ONIGIRI.testnet.packageId,
+    userObjectId,
+    title,
+    blobId,
+    price,
+  )
+}
+export async function createFreePost(tx: Transaction, userObjectId: string, title: string, content: string) {
+  const response = await fetch(`${PUBLISHER}/v1/blobs`, {
+    method: 'PUT',
+    body: content,
   })
 
   if (!response.ok) {
