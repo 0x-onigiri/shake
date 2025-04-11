@@ -44,6 +44,7 @@ public fun create_post(
     _: &User,
     title: String,
     post_blob_id: String,
+    price: Option<u64>,
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
@@ -65,8 +66,7 @@ public fun create_post(
         owner: ctx.sender(),
         like: 0,
         tag: vector[],
-        // TODO: create_postの引数にpriceを追加して、priceを設定できるようにする
-        price: option::some(10_000_000),
+        price,
     };
 
     transfer::public_transfer(post, ctx.sender());
