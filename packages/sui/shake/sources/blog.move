@@ -4,6 +4,7 @@ use shake::user::User;
 use std::string::String;
 use sui::clock::Clock;
 use sui::coin::Coin;
+use sui::object_table::{Self, ObjectTable};
 use sui::sui::SUI;
 use sui::table::{Self, Table};
 use sui::vec_map::{Self, VecMap};
@@ -26,9 +27,9 @@ public struct PostMetadata has key, store {
     tag: vector<String>,
     price: Option<u64>,
     // postに対するレビューを格納 <レビュワーアカウントid, レビューオブジェクト>
-    // reviews: ObjectTable<ID, Review>,
+    reviews: ObjectTable<ID, Review>,
     // postに対するレビューを格納 <レビュワーアカウントid, レビューオブジェクトID>
-    reviews: Table<ID, ID>,
+    // reviews: Table<ID, ID>,
     // レビューの総数
     review_count: u64,
     // レビューに対する評価を格納 <レビューid, <評価者アカウントid, 評価>>
@@ -64,10 +65,8 @@ public fun create_review(
         updated_at: clock.timestamp_ms(),
     };
 
-    post_metadata.reviews.add(review.id.uid_to_inner(), ctx.sender().to_id());
+    post_metadata.reviews.add(ctx.sender().to_id(), review);
     post_metadata.review_count = post_metadata.review_count + 1;
-
-    transfer::public_transfer(review, ctx.sender());
 }
 
 /// レビューに対する評価を追加
@@ -145,7 +144,7 @@ public fun create_post(
         like: 0,
         tag: vector[],
         price,
-        reviews: table::new(ctx),
+        reviews: object_table::new(ctx),
         review_votes: table::new(ctx),
         review_count: 0,
         review_vote_count: review_vote_count,
