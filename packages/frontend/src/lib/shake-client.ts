@@ -203,3 +203,25 @@ export async function createFreePost(tx: Transaction, userObjectId: string, titl
     blobId,
   )
 }
+
+export async function createReview(tx: Transaction, postMetadataId: string, content: string) {
+  if (!content.trim()) {
+    throw new Error('レビュー内容を入力してください')
+  }
+
+  return BlogModule.createReview(
+    tx,
+    SHAKE_ONIGIRI.testnet.packageId,
+    postMetadataId,
+    content
+  )
+}
+
+export async function voteForReview(tx: Transaction, postMetadataId: string, reaction: 'Helpful' | 'NotHelpful') {
+  return BlogModule.voteForReview(
+    tx,
+    SHAKE_ONIGIRI.testnet.packageId,
+    postMetadataId,
+    reaction
+  )
+}
