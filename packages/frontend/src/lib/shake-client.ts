@@ -115,6 +115,7 @@ export async function fetchPost(
   const postMetadata: PostMetadata = {
     id: postMetadataFields.id.id,
     price: postMetadataFields.price ? Number(postMetadataFields.price) : 0,
+    reviewObjId: postMetadataFields.reviews.fields.id.id,
   }
 
   const post: Post = {
@@ -151,7 +152,7 @@ export async function fetchPostContent(
 
 // TODO: contentが暗号化前提になっているが、無料記事の場合は暗号化しないようにする（別関数でもok）
 export async function createPaidPost(tx: Transaction, userObjectId: string, title: string, encryptedContent: Uint8Array, price: number) {
-  const response = await fetch(`${PUBLISHER}/v1/blobs`, {
+  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=5`, {
     method: 'PUT',
     body: encryptedContent,
   })
@@ -178,7 +179,7 @@ export async function createPaidPost(tx: Transaction, userObjectId: string, titl
   )
 }
 export async function createFreePost(tx: Transaction, userObjectId: string, title: string, content: string) {
-  const response = await fetch(`${PUBLISHER}/v1/blobs`, {
+  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=5`, {
     method: 'PUT',
     body: content,
   })
@@ -224,4 +225,86 @@ export async function voteForReview(tx: Transaction, postMetadataId: string, rea
     postMetadataId,
     reaction
   )
+}
+
+export async function fetchPostReviews(postId: string, existingPost?: Post): Promise<any[]> {
+
+  try {
+    const post = existingPost || await fetchPost(postId)
+    
+    if (!post || !post.metadata) {
+      throw new Error('データが見つかりません')
+    }
+    const reviews = []
+
+    const dynamicFields = await suiClient.getDynamicFields({
+      parentId: post.metadata.reviewObjId
+    })
+
+    console.log('dynamicFields', dynamicFields)
+    
+    for (const field of dynamicFields.data) {
+      console.log('field', field)
+      try {
+        const reviewObj = await suiClient.getDynamicFieldObject({
+          parentId: post.metadata.reviewObjId,
+          name: {
+            type: field.name.type,
+            value: field.name.value
+          }
+        })
+        
+        if (reviewObj.error) {
+          console.error('レビュー取得エラー:', reviewObj.error)
+          continue
+        }
+        
+        let authorData: { name: string; image: undefined | string } = { 
+          name: '匿名ユーザー', 
+          image: undefined 
+        }
+        try {
+          console.log('field.name', field.name)
+          if (field.name.value) {
+            let userId = field.name.value;
+            if (userId && typeof userId === 'string') {
+              const author = await fetchUser(userId)
+              if (author) {
+                authorData = {
+                  name: author.username || '匿名ユーザー',
+                  image: author.image
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.error('レビュー作成者取得エラー:', err)
+        }
+
+        const fields = objResToFields(reviewObj)
+        console.log('fields', fields)
+        
+        // レビューオブジェクトを作成
+        if (fields && fields.id && fields.content) {
+          const review = {
+            id: fields.id.id,
+            content: fields.content,
+            author: authorData,
+            createdAt: new Date(Number(fields.created_at)).toLocaleString('ja-JP'),
+            helpfulCount: 0, // todo 評価の取得処理
+            notHelpfulCount: 0 // todo 評価の取得処理
+          }
+          
+          reviews.push(review)
+        }
+      } catch (err) {
+        console.error('レビューデータ取得エラー:', err)
+      }
+    }
+    
+    return reviews
+  } catch (error) {
+    console.error('レビュー取得エラー:', error)
+    return []
+  }
 }

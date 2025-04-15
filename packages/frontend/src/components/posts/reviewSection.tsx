@@ -1,4 +1,4 @@
-import { ThumbsUp, ThumbsDown } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -7,6 +7,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { AGGREGATOR } from '@/constants'
 
 interface Review {
   id: string
@@ -25,9 +27,10 @@ interface ReviewSectionProps {
   reviewContent: string
   isSubmitting: boolean
   isAuthor: boolean
+  isLoadingReviews: boolean
   onReviewContentChange: (value: string) => void
   onSubmitReview: (e: React.FormEvent) => void
-  onVoteReview: (reviewId: string, reaction: 'Helpful' | 'NotHelpful') => void
+  onVoteReview: (reaction: 'Helpful' | 'NotHelpful') => void
 }
 
 export function ReviewSection({
@@ -35,6 +38,7 @@ export function ReviewSection({
   reviewContent,
   isSubmitting,
   isAuthor,
+  isLoadingReviews,
   onReviewContentChange,
   onSubmitReview,
   onVoteReview
@@ -44,7 +48,6 @@ export function ReviewSection({
       <div className="border-t pt-8">
         <h2 className="text-2xl font-bold mb-4">レビュー {reviews.length}件</h2>
         
-        {/* 自身のpostでない場合レビュー入力可能 */}
         {!isAuthor && (
           <form onSubmit={onSubmitReview} className="space-y-4">
             <Textarea
@@ -56,7 +59,14 @@ export function ReviewSection({
             />
             <div className="flex justify-end">
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? '投稿中...' : '投稿する'}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    投稿中...
+                  </>
+                ) : (
+                  '投稿する'
+                )}
               </Button>
             </div>
           </form>
@@ -64,7 +74,11 @@ export function ReviewSection({
       </div>
 
       <div className="space-y-6">
-        {reviews.length === 0 ? (
+        {isLoadingReviews ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : reviews.length === 0 ? (
           <p className="text-gray-500">まだレビューがありません</p>
         ) : (
           reviews.map((review) => (
@@ -72,13 +86,14 @@ export function ReviewSection({
               <div className="flex items-center gap-3 mb-3">
                 <div className="flex items-center gap-2">
                   {review.author.image ? (
-                    <img
-                      src={review.author.image}
-                      alt={review.author.name}
-                      className="w-8 h-8 rounded-full"
-                    />
+                    <Avatar>
+                      <AvatarImage src={`${AGGREGATOR}/v1/blobs/${review.author.image}`} alt={review.author.name} />
+                      <AvatarFallback>{review.author.name}</AvatarFallback>
+                    </Avatar>
                   ) : (
-                    <div className="w-8 h-8 bg-gray-200 rounded-full" />
+                    <Avatar>
+                      <AvatarFallback>{review.author.name}</AvatarFallback>
+                    </Avatar>
                   )}
                   <span className="font-medium">{review.author.name}</span>
                 </div>
@@ -95,7 +110,7 @@ export function ReviewSection({
                         variant="ghost" 
                         size="sm" 
                         className="gap-2"
-                        onClick={() => onVoteReview(review.id, 'Helpful')}
+                        onClick={() => onVoteReview('Helpful')}
                       >
                         <ThumbsUp className="h-4 w-4" />
                         <span>{review.helpfulCount}</span>
@@ -114,7 +129,7 @@ export function ReviewSection({
                         variant="ghost" 
                         size="sm" 
                         className="gap-2"
-                        onClick={() => onVoteReview(review.id, 'NotHelpful')}
+                        onClick={() => onVoteReview('NotHelpful')}
                       >
                         <ThumbsDown className="h-4 w-4" />
                         <span>{review.notHelpfulCount}</span>

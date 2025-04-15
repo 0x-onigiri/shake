@@ -7,7 +7,7 @@ import { fromHex } from '@mysten/sui/utils'
 import { fetchPost } from '@/lib/shake-client'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import type { Post } from '@/types'
-import { fetchUser, fetchPostContent, createReview, voteForReview } from '@/lib/shake-client'
+import { fetchUser, fetchPostContent, createReview, voteForReview, fetchPostReviews } from '@/lib/shake-client'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -77,24 +77,28 @@ function FreePostDetail({
   
   const [reviewContent, setReviewContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [reviews, setReviews] = useState<any[]>([])
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true)
   const currentAccount = useCurrentAccount()
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction()
   const isAuthor = currentAccount?.address === post.author
 
-  const reviews = [
-    // テスト用のダミーデータ
-    {
-      id: '1',
-      content: 'とても参考になりました！',
-      author: {
-        name: 'テストユーザー',
-        image: undefined
-      },
-      createdAt: '2025年4月12日 15:56',
-      helpfulCount: 1,
-      notHelpfulCount: 0,
-    },
-  ]
+  // レビュー一覧を取得
+  useEffect(() => {
+    const getReviews = async () => {
+      try {
+        setIsLoadingReviews(true)
+        const fetchedReviews = await fetchPostReviews(post.id, post)
+        setReviews(fetchedReviews)
+      } catch (error) {
+        console.error('レビュー取得エラー:', error)
+      } finally {
+        setIsLoadingReviews(false)
+      }
+    }
+    
+    getReviews()
+  }, [post.id, post])
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -115,6 +119,11 @@ function FreePostDetail({
           onSuccess: (result) => {
             console.log('レビュー投稿成功:', result)
             setReviewContent('')
+            
+            // レビュー投稿後に一覧を再取得
+            fetchPostReviews(post.id, post).then(fetchedReviews => {
+              setReviews(fetchedReviews)
+            })
           },
           onError: (err) => {
             console.error('レビュー投稿エラー:', err)
@@ -145,6 +154,11 @@ function FreePostDetail({
         {
           onSuccess: (result) => {
             console.log(`${reaction}投票成功:`, result)
+            
+            // 投票後にレビュー一覧を再取得
+            fetchPostReviews(post.id, post).then(fetchedReviews => {
+              setReviews(fetchedReviews)
+            })
           },
           onError: (err) => {
             console.error(`${reaction}投票エラー:`, err)
@@ -203,9 +217,10 @@ function FreePostDetail({
           reviewContent={reviewContent}
           isSubmitting={isSubmitting}
           isAuthor={isAuthor}
+          isLoadingReviews={isLoadingReviews}
           onReviewContentChange={setReviewContent}
           onSubmitReview={handleSubmitReview}
-          onVoteReview={() => handleVoteReview('Helpful')}
+          onVoteReview={handleVoteReview}
         />
       </div>
     </div>
@@ -253,23 +268,27 @@ function PaidPostDetail({
 
   const [reviewContent, setReviewContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [reviews, setReviews] = useState<any[]>([])
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true)
   const currentAccount = useCurrentAccount()
   const isAuthor = currentAccount?.address === post.author
 
-  const reviews = [
-    // テスト用のダミーデータ
-    {
-      id: '1',
-      content: 'とても参考になりました！',
-      author: {
-        name: 'テストユーザー',
-        image: undefined
-      },
-      createdAt: '2025年4月12日 15:56',
-      helpfulCount: 1,
-      notHelpfulCount: 0,
-    },
-  ]
+  // レビュー一覧を取得
+  useEffect(() => {
+    const getReviews = async () => {
+      try {
+        setIsLoadingReviews(true)
+        const fetchedReviews = await fetchPostReviews(post.id, post)
+        setReviews(fetchedReviews)
+      } catch (error) {
+        console.error('レビュー取得エラー:', error)
+      } finally {
+        setIsLoadingReviews(false)
+      }
+    }
+    
+    getReviews()
+  }, [post.id, post])
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -290,7 +309,11 @@ function PaidPostDetail({
           onSuccess: (result) => {
             console.log('レビュー投稿成功:', result)
             setReviewContent('')
-            // TODO: レビュー一覧を更新する処理
+            
+            // レビュー投稿後に一覧を再取得
+            fetchPostReviews(post.id, post).then(fetchedReviews => {
+              setReviews(fetchedReviews)
+            })
           },
           onError: (err) => {
             console.error('レビュー投稿エラー:', err)
@@ -321,7 +344,11 @@ function PaidPostDetail({
         {
           onSuccess: (result) => {
             console.log(`${reaction}投票成功:`, result)
-            // TODO: レビュー一覧を更新する処理
+            
+            // 投票後にレビュー一覧を再取得
+            fetchPostReviews(post.id, post).then(fetchedReviews => {
+              setReviews(fetchedReviews)
+            })
           },
           onError: (err) => {
             console.error(`${reaction}投票エラー:`, err)
@@ -532,9 +559,10 @@ function PaidPostDetail({
           reviewContent={reviewContent}
           isSubmitting={isSubmitting}
           isAuthor={isAuthor}
+          isLoadingReviews={isLoadingReviews}
           onReviewContentChange={setReviewContent}
           onSubmitReview={handleSubmitReview}
-          onVoteReview={() => handleVoteReview('Helpful')}
+          onVoteReview={handleVoteReview}
         />
       </div>
     </div>
