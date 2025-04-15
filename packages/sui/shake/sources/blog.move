@@ -27,7 +27,7 @@ public struct PostMetadata has key, store {
     tag: vector<String>,
     price: Option<u64>,
     // postに対するレビューを格納 <レビュワーアカウントid, レビューオブジェクト>
-    reviews: ObjectTable<ID, Review>,
+    reviews: ObjectTable<ID, Review>, // indexer 等使用する場合は不要
     // postに対するレビューを格納 <レビュワーアカウントid, レビューオブジェクトID>
     // reviews: Table<ID, ID>,
     // レビューの総数
@@ -40,6 +40,7 @@ public struct PostMetadata has key, store {
 
 public struct Review has key, store {
     id: UID,
+    post_id: ID,
     content: String,
     created_at: u64,
     updated_at: u64,
@@ -49,55 +50,6 @@ public enum VoteForReview has copy, drop, store {
     Helpful,
     NotHelpful,
     None,
-}
-
-#[allow(lint(self_transfer))]
-public fun create_review(
-    post_metadata: &mut PostMetadata,
-    content: String,
-    clock: &Clock,
-    ctx: &mut TxContext,
-) {
-    let review = Review {
-        id: object::new(ctx),
-        content,
-        created_at: clock.timestamp_ms(),
-        updated_at: clock.timestamp_ms(),
-    };
-
-    post_metadata.reviews.add(ctx.sender().to_id(), review);
-    post_metadata.review_count = post_metadata.review_count + 1;
-}
-
-/// レビューに対する評価を追加
-entry fun vote_for_review(post_metadata: &mut PostMetadata, reaction_arg: vector<u8>) {
-    let reaction = parse_vote_for_review(reaction_arg);
-    //todo Noneの場合はエラーとする
-    assert!(reaction != &VoteForReview::None, 100);
-
-    match (reaction) {
-        VoteForReview::Helpful => {
-            let count = post_metadata.review_vote_count.get_mut(&VoteForReview::Helpful);
-            *count = *count + 1;
-        },
-        VoteForReview::NotHelpful => {
-            let count = post_metadata.review_vote_count.get_mut(&VoteForReview::NotHelpful);
-            *count = *count + 1;
-        },
-        // Noneの場合はエラーとする
-        VoteForReview::None => abort 100,
-    };
-}
-
-// フロントからおそらくenum渡せないので、vector<u8>で受け取り変換する
-fun parse_vote_for_review(reaction_arg: vector<u8>): VoteForReview {
-    if (reaction_arg == b"Helpful") {
-        VoteForReview::Helpful
-    } else if (reaction_arg == b"NotHelpful") {
-        VoteForReview::NotHelpful
-    } else {
-        VoteForReview::None
-    }
 }
 
 public struct PostPayment has key {
@@ -226,4 +178,54 @@ fun is_prefix(prefix: vector<u8>, word: vector<u8>): bool {
         i = i + 1;
     };
     true
+}
+
+#[allow(lint(self_transfer))]
+public fun create_review(
+    post_metadata: &mut PostMetadata,
+    content: String,
+    clock: &Clock,
+    ctx: &mut TxContext,
+) {
+    let review = Review {
+        id: object::new(ctx),
+        post_id: post_metadata.post_id,
+        content,
+        created_at: clock.timestamp_ms(),
+        updated_at: clock.timestamp_ms(),
+    };
+
+    post_metadata.reviews.add(ctx.sender().to_id(), review);
+    post_metadata.review_count = post_metadata.review_count + 1;
+}
+
+/// レビューに対する評価を追加
+entry fun vote_for_review(post_metadata: &mut PostMetadata, reaction_arg: vector<u8>) {
+    let reaction = parse_vote_for_review(reaction_arg);
+    //todo Noneの場合はエラーとする
+    assert!(reaction != &VoteForReview::None, 100);
+
+    match (reaction) {
+        VoteForReview::Helpful => {
+            let count = post_metadata.review_vote_count.get_mut(&VoteForReview::Helpful);
+            *count = *count + 1;
+        },
+        VoteForReview::NotHelpful => {
+            let count = post_metadata.review_vote_count.get_mut(&VoteForReview::NotHelpful);
+            *count = *count + 1;
+        },
+        // Noneの場合はエラーとする
+        VoteForReview::None => abort 100,
+    };
+}
+
+// フロントからおそらくenum渡せないので、vector<u8>で受け取り変換する
+fun parse_vote_for_review(reaction_arg: vector<u8>): VoteForReview {
+    if (reaction_arg == b"Helpful") {
+        VoteForReview::Helpful
+    } else if (reaction_arg == b"NotHelpful") {
+        VoteForReview::NotHelpful
+    } else {
+        VoteForReview::None
+    }
 }
