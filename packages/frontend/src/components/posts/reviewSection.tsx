@@ -20,6 +20,7 @@ interface Review {
   createdAt: string
   helpfulCount: number
   notHelpfulCount: number
+  isCurrentUserReview?: boolean
 }
 
 interface ReviewSectionProps {
@@ -43,6 +44,7 @@ export function ReviewSection({
   onSubmitReview,
   onVoteReview
 }: ReviewSectionProps) {
+  console.log('aaaaaaaaareviews', reviews)
   return (
     <div className="space-y-8">
       <div className="border-t pt-8">
@@ -103,43 +105,58 @@ export function ReviewSection({
               <p className="mb-3">{review.content}</p>
               
               <div className="flex gap-4">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="gap-2"
-                        onClick={() => onVoteReview('Helpful')}
-                      >
-                        <ThumbsUp className="h-4 w-4" />
-                        <span>{review.helpfulCount}</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>参考になった</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                {isAuthor || review.isCurrentUserReview ? (
+                  <>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <ThumbsUp className="h-4 w-4" />
+                      <span>{review.helpfulCount}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <ThumbsDown className="h-4 w-4" />
+                      <span>{review.notHelpfulCount}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="gap-2"
+                            onClick={() => onVoteReview('Helpful')}
+                          >
+                            <ThumbsUp className="h-4 w-4" />
+                            <span>{review.helpfulCount}</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>参考になった</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
 
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="gap-2"
-                        onClick={() => onVoteReview('NotHelpful')}
-                      >
-                        <ThumbsDown className="h-4 w-4" />
-                        <span>{review.notHelpfulCount}</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>参考にならなかった</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="gap-2"
+                            onClick={() => onVoteReview('NotHelpful')}
+                          >
+                            <ThumbsDown className="h-4 w-4" />
+                            <span>{review.notHelpfulCount}</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>参考にならなかった</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </>
+                )}
               </div>
             </div>
           ))

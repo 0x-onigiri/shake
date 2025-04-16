@@ -227,7 +227,7 @@ export async function voteForReview(tx: Transaction, postMetadataId: string, rea
   )
 }
 
-export async function fetchPostReviews(postId: string, existingPost?: Post): Promise<any[]> {
+export async function fetchPostReviews(postId: string, existingPost?: Post, currentUserAddress?: string): Promise<any[]> {
 
   try {
     const post = existingPost || await fetchPost(postId)
@@ -263,11 +263,16 @@ export async function fetchPostReviews(postId: string, existingPost?: Post): Pro
           name: '匿名ユーザー', 
           image: undefined 
         }
+        let isCurrentUserReview = false
         try {
           console.log('field.name', field.name)
           if (field.name.value) {
             let userId = field.name.value;
             if (userId && typeof userId === 'string') {
+              // 現在のユーザーのアドレスとレビュー作成者のアドレスを比較
+              if (currentUserAddress && currentUserAddress === userId) {
+                isCurrentUserReview = true
+              }
               const author = await fetchUser(userId)
               if (author) {
                 authorData = {
@@ -292,7 +297,8 @@ export async function fetchPostReviews(postId: string, existingPost?: Post): Pro
             author: authorData,
             createdAt: new Date(Number(fields.created_at)).toLocaleString('ja-JP'),
             helpfulCount: 0, // todo 評価の取得処理
-            notHelpfulCount: 0 // todo 評価の取得処理
+            notHelpfulCount: 0, // todo 評価の取得処理
+            isCurrentUserReview // 自分のレビューかどうかのフラグを追加
           }
           
           reviews.push(review)

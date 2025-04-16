@@ -88,7 +88,7 @@ function FreePostDetail({
     const getReviews = async () => {
       try {
         setIsLoadingReviews(true)
-        const fetchedReviews = await fetchPostReviews(post.id, post)
+        const fetchedReviews = await fetchPostReviews(post.id, post, currentAccount?.address)
         setReviews(fetchedReviews)
       } catch (error) {
         console.error('レビュー取得エラー:', error)
@@ -98,7 +98,7 @@ function FreePostDetail({
     }
     
     getReviews()
-  }, [post.id, post])
+  }, [post.id, post, currentAccount?.address])
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -121,7 +121,7 @@ function FreePostDetail({
             setReviewContent('')
             
             // レビュー投稿後に一覧を再取得
-            fetchPostReviews(post.id, post).then(fetchedReviews => {
+            fetchPostReviews(post.id, post, currentAccount?.address).then(fetchedReviews => {
               setReviews(fetchedReviews)
             })
           },
@@ -156,7 +156,7 @@ function FreePostDetail({
             console.log(`${reaction}投票成功:`, result)
             
             // 投票後にレビュー一覧を再取得
-            fetchPostReviews(post.id, post).then(fetchedReviews => {
+            fetchPostReviews(post.id, post, currentAccount?.address).then(fetchedReviews => {
               setReviews(fetchedReviews)
             })
           },
@@ -278,7 +278,7 @@ function PaidPostDetail({
     const getReviews = async () => {
       try {
         setIsLoadingReviews(true)
-        const fetchedReviews = await fetchPostReviews(post.id, post)
+        const fetchedReviews = await fetchPostReviews(post.id, post, currentAccount?.address)
         setReviews(fetchedReviews)
       } catch (error) {
         console.error('レビュー取得エラー:', error)
@@ -288,7 +288,7 @@ function PaidPostDetail({
     }
     
     getReviews()
-  }, [post.id, post])
+  }, [post.id, post, currentAccount?.address])
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -311,7 +311,7 @@ function PaidPostDetail({
             setReviewContent('')
             
             // レビュー投稿後に一覧を再取得
-            fetchPostReviews(post.id, post).then(fetchedReviews => {
+            fetchPostReviews(post.id, post, currentAccount?.address).then(fetchedReviews => {
               setReviews(fetchedReviews)
             })
           },
@@ -346,7 +346,7 @@ function PaidPostDetail({
             console.log(`${reaction}投票成功:`, result)
             
             // 投票後にレビュー一覧を再取得
-            fetchPostReviews(post.id, post).then(fetchedReviews => {
+            fetchPostReviews(post.id, post, currentAccount?.address).then(fetchedReviews => {
               setReviews(fetchedReviews)
             })
           },
