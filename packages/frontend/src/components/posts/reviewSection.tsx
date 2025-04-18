@@ -44,7 +44,6 @@ export function ReviewSection({
   onSubmitReview,
   onVoteReview
 }: ReviewSectionProps) {
-  console.log('aaaaaaaaareviews', reviews)
   return (
     <div className="space-y-8">
       <div className="border-t pt-8">

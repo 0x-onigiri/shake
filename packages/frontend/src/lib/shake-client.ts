@@ -115,7 +115,7 @@ export async function fetchPost(
   const postMetadata: PostMetadata = {
     id: postMetadataFields.id.id,
     price: postMetadataFields.price ? Number(postMetadataFields.price) : 0,
-    reviewObjId: postMetadataFields.reviews.fields.id.id,
+    reviews: postMetadataFields.reviews.fields.contents,
   }
 
   const post: Post = {
@@ -152,7 +152,7 @@ export async function fetchPostContent(
 
 // TODO: contentが暗号化前提になっているが、無料記事の場合は暗号化しないようにする（別関数でもok）
 export async function createPaidPost(tx: Transaction, userObjectId: string, title: string, encryptedContent: Uint8Array, price: number) {
-  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=5`, {
+  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=10`, {
     method: 'PUT',
     body: encryptedContent,
   })
@@ -179,7 +179,7 @@ export async function createPaidPost(tx: Transaction, userObjectId: string, titl
   )
 }
 export async function createFreePost(tx: Transaction, userObjectId: string, title: string, content: string) {
-  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=5`, {
+  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=10`, {
     method: 'PUT',
     body: content,
   })
@@ -237,25 +237,33 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
     }
     const reviews = []
 
-    const dynamicFields = await suiClient.getDynamicFields({
-      parentId: post.metadata.reviewObjId
-    })
-
-    console.log('dynamicFields', dynamicFields)
+    // post.metadata.reviewsからレビューIDを取得
+    const reviewIds = post.metadata.reviews || []
     
-    for (const field of dynamicFields.data) {
-      console.log('field', field)
+    for (const reviewId of reviewIds) {
       try {
-        const reviewObj = await suiClient.getDynamicFieldObject({
-          parentId: post.metadata.reviewObjId,
-          name: {
-            type: field.name.type,
-            value: field.name.value
-          }
+        // レビューオブジェクトを直接取得
+        const reviewObj = await suiClient.getObject({
+          id: reviewId,
+          options: {
+            showContent: true,
+            showOwner: true,
+          },
         })
         
         if (reviewObj.error) {
           console.error('レビュー取得エラー:', reviewObj.error)
+          continue
+        }
+        
+        const fields = objResToFields(reviewObj)
+
+        const authorAddress = fields.reviewer
+        if (authorAddress === 'unknown') {
+          throw new Error('Invalid post owner')
+        }
+        
+        if (!fields || !fields.id || !fields.content) {
           continue
         }
         
@@ -264,21 +272,19 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
           image: undefined 
         }
         let isCurrentUserReview = false
+        
         try {
-          console.log('field.name', field.name)
-          if (field.name.value) {
-            let userId = field.name.value;
-            if (userId && typeof userId === 'string') {
-              // 現在のユーザーのアドレスとレビュー作成者のアドレスを比較
-              if (currentUserAddress && currentUserAddress === userId) {
-                isCurrentUserReview = true
-              }
-              const author = await fetchUser(userId)
-              if (author) {
-                authorData = {
-                  name: author.username || '匿名ユーザー',
-                  image: author.image
-                }
+          if (authorAddress && authorAddress !== 'unknown') {
+            // 現在のユーザーのアドレスとレビュー作成者のアドレスを比較
+            if (currentUserAddress && currentUserAddress === authorAddress) {
+              isCurrentUserReview = true
+            }
+            
+            const author = await fetchUser(authorAddress)
+            if (author) {
+              authorData = {
+                name: author.username || '匿名ユーザー',
+                image: author.image
               }
             }
           }
@@ -286,23 +292,17 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
           console.error('レビュー作成者取得エラー:', err)
         }
 
-        const fields = objResToFields(reviewObj)
-        console.log('fields', fields)
-        
-        // レビューオブジェクトを作成
-        if (fields && fields.id && fields.content) {
-          const review = {
-            id: fields.id.id,
-            content: fields.content,
-            author: authorData,
-            createdAt: new Date(Number(fields.created_at)).toLocaleString('ja-JP'),
-            helpfulCount: 0, // todo 評価の取得処理
-            notHelpfulCount: 0, // todo 評価の取得処理
-            isCurrentUserReview // 自分のレビューかどうかのフラグを追加
-          }
-          
-          reviews.push(review)
+        const review = {
+          id: fields.id.id,
+          content: fields.content,
+          author: authorData,
+          createdAt: new Date(Number(fields.created_at)).toLocaleString('ja-JP'),
+          helpfulCount: 0, // todo 評価の取得処理
+          notHelpfulCount: 0, // todo 評価の取得処理
+          isCurrentUserReview
         }
+        
+        reviews.push(review)
       } catch (err) {
         console.error('レビューデータ取得エラー:', err)
       }

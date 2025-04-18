@@ -16,5 +16,7 @@ export type Post = {
 export type PostMetadata = {
   id: string
   price: number
-  reviewObjId: string
+  reviews: string[]
+  // helpfulCount: number
+  // notHelpfulCount: number
 }
