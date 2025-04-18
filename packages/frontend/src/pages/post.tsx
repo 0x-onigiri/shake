@@ -16,7 +16,7 @@ import { CalendarIcon, Clock, Book } from 'lucide-react'
 import { getInputCoins, downloadAndDecrypt, MoveCallConstructor } from '@/lib/sui/utils'
 import { BlogModule } from '@/lib/sui/blog-functions'
 import { devInspectAndGetExecutionResults } from '@polymedia/suitcase-core'
-import { ReviewSection } from '@/components/posts/reviewSection'
+import { ReviewSection } from '@/components/posts/review-section'
 
 export default function PostPage() {
   const { postId } = useParams()

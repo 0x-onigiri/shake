@@ -202,8 +202,6 @@ public fun create_review(
 /// レビューに対する評価を追加
 entry fun vote_for_review(post_metadata: &mut PostMetadata, reaction_arg: vector<u8>) {
     let reaction = parse_vote_for_review(reaction_arg);
-    //todo Noneの場合はエラーとする
-    assert!(reaction != &VoteForReview::None, 100);
 
     match (reaction) {
         VoteForReview::Helpful => {
@@ -214,7 +212,7 @@ entry fun vote_for_review(post_metadata: &mut PostMetadata, reaction_arg: vector
             let count = post_metadata.review_vote_count.get_mut(&VoteForReview::NotHelpful);
             *count = *count + 1;
         },
-        // Noneの場合はエラーとする
+        // Noneの場合はエラーとする todo エラーメッセージを追加する
         VoteForReview::None => abort 100,
     };
 }
