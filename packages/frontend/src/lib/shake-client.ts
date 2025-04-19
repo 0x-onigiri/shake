@@ -218,11 +218,11 @@ export async function createReview(tx: Transaction, postMetadataId: string, cont
   )
 }
 
-export async function voteForReview(tx: Transaction, postMetadataId: string, reaction: 'Helpful' | 'NotHelpful') {
+export async function voteForReview(tx: Transaction, reviewId: string, reaction: 'Helpful' | 'NotHelpful') {
   return BlogModule.voteForReview(
     tx,
     SHAKE_ONIGIRI.testnet.packageId,
-    postMetadataId,
+    reviewId,
     reaction
   )
 }
@@ -292,14 +292,49 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
           console.error('レビュー作成者取得エラー:', err)
         }
 
+        let helpfulCount = 0
+        let notHelpfulCount = 0
+        let currentUserVote: null | 'Helpful' | 'NotHelpful' = null
+
+        try {
+          const voteCountMap = fields.review_vote_count.fields.contents;
+          for (let i = 0; i < voteCountMap.length; i++) {
+            const voteItem = voteCountMap[i];
+            if (voteItem.fields) {
+              const key = voteItem.fields.key.variant;
+              const value = Number(voteItem.fields.value);
+              
+              if (key === 'Helpful') {
+                helpfulCount = value;
+              } else if (key === 'NotHelpful') {
+                notHelpfulCount = value;
+              }
+            }
+          }
+
+          if (currentUserAddress && fields.review_votes && fields.review_votes.fields && fields.review_votes.fields.contents) {
+            const reviewVotes = fields.review_votes.fields.contents;
+            for (let i = 0; i < reviewVotes.length; i++) {
+              const voteItem = reviewVotes[i];
+              if (voteItem.fields && voteItem.fields.key === currentUserAddress) {
+                currentUserVote = voteItem.fields.value.variant;
+                break;
+              }
+            }
+          }
+        } catch (err) {
+          console.error('レビュー評価数取得エラー:', err);
+        }
+
         const review = {
           id: fields.id.id,
           content: fields.content,
           author: authorData,
           createdAt: new Date(Number(fields.created_at)).toLocaleString('ja-JP'),
-          helpfulCount: 0, // todo 評価の取得処理
-          notHelpfulCount: 0, // todo 評価の取得処理
-          isCurrentUserReview
+          helpfulCount: helpfulCount,
+          notHelpfulCount: notHelpfulCount,
+          isCurrentUserReview,
+          currentUserVote
         }
         
         reviews.push(review)

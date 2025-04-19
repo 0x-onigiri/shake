@@ -139,12 +139,12 @@ function FreePostDetail({
     }
   }
 
-  const handleVoteReview = (reaction: 'Helpful' | 'NotHelpful') => {
+  const handleVoteReview = (reaction: 'Helpful' | 'NotHelpful', reviewId: string) => {
     if (!post.metadata?.id) return
 
     try {
       const tx = new Transaction()
-      voteForReview(tx, post.metadata.id, reaction)
+      voteForReview(tx, reviewId, reaction)
 
       signAndExecuteTransaction(
         {
@@ -329,12 +329,12 @@ function PaidPostDetail({
     }
   }
 
-  const handleVoteReview = (reaction: 'Helpful' | 'NotHelpful') => {
+  const handleVoteReview = (reaction: 'Helpful' | 'NotHelpful', reviewId: string) => {
     if (!post.metadata?.id) return
 
     try {
       const tx = new Transaction()
-      voteForReview(tx, post.metadata.id, reaction)
+      voteForReview(tx, reviewId, reaction)
 
       signAndExecuteTransaction(
         {

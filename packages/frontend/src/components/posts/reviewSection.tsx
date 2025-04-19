@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/tooltip'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AGGREGATOR } from '@/constants'
+import { cn } from '@/lib/utils'
 
 interface Review {
   id: string
@@ -21,6 +22,7 @@ interface Review {
   helpfulCount: number
   notHelpfulCount: number
   isCurrentUserReview?: boolean
+  currentUserVote?: 'Helpful' | 'NotHelpful' | null
 }
 
 interface ReviewSectionProps {
@@ -31,7 +33,7 @@ interface ReviewSectionProps {
   isLoadingReviews: boolean
   onReviewContentChange: (value: string) => void
   onSubmitReview: (e: React.FormEvent) => void
-  onVoteReview: (reaction: 'Helpful' | 'NotHelpful') => void
+  onVoteReview: (reaction: 'Helpful' | 'NotHelpful', reviewId: string) => void
 }
 
 export function ReviewSection({
@@ -123,8 +125,11 @@ export function ReviewSection({
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="gap-2"
-                            onClick={() => onVoteReview('Helpful')}
+                            className={cn(
+                              "gap-2",
+                              review.currentUserVote === 'Helpful' && "bg-orange-100 text-orange-600 hover:bg-orange-200 hover:text-orange-700"
+                            )}
+                            onClick={() => onVoteReview('Helpful', review.id)}
                           >
                             <ThumbsUp className="h-4 w-4" />
                             <span>{review.helpfulCount}</span>
@@ -142,8 +147,11 @@ export function ReviewSection({
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="gap-2"
-                            onClick={() => onVoteReview('NotHelpful')}
+                            className={cn(
+                              "gap-2",
+                              review.currentUserVote === 'NotHelpful' && "bg-orange-100 text-orange-600 hover:bg-orange-200 hover:text-orange-700"
+                            )}
+                            onClick={() => onVoteReview('NotHelpful', review.id)}
                           >
                             <ThumbsDown className="h-4 w-4" />
                             <span>{review.notHelpfulCount}</span>
