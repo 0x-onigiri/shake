@@ -119,9 +119,10 @@ function FreePostDetail({
             console.log('レビュー投稿成功:', result)
             setReviewContent('')
             
-            fetchPostReviews(post.id, post, currentAccount?.address).then(fetchedReviews => {
-              setReviews(fetchedReviews)
-            })
+            // 投稿成功後に画面をリロードしてレビュー一覧を取得する(この方法が良いかは不明)
+            setTimeout(() => {
+              window.location.reload()
+            }, 1000)
           },
           onError: (err) => {
             console.error('レビュー投稿エラー:', err)
@@ -153,9 +154,10 @@ function FreePostDetail({
           onSuccess: (result) => {
             console.log(`${reaction}投票成功:`, result)
             
-            fetchPostReviews(post.id, post, currentAccount?.address).then(fetchedReviews => {
-              setReviews(fetchedReviews)
-            })
+            // 投票成功後に画面をリロードしてレビュー一覧を取得する(この方法が良いかは不明)
+            setTimeout(() => {
+              window.location.reload()
+            }, 1000)
           },
           onError: (err) => {
             console.error(`${reaction}投票エラー:`, err)
@@ -306,9 +308,10 @@ function PaidPostDetail({
             console.log('レビュー投稿成功:', result)
             setReviewContent('')
             
-            fetchPostReviews(post.id, post, currentAccount?.address).then(fetchedReviews => {
-              setReviews(fetchedReviews)
-            })
+            // 投稿成功後に画面をリロードしてレビュー一覧を取得する(この方法が良いかは不明)
+            setTimeout(() => {
+              window.location.reload()
+            }, 1000)
           },
           onError: (err) => {
             console.error('レビュー投稿エラー:', err)
@@ -340,9 +343,10 @@ function PaidPostDetail({
           onSuccess: (result) => {
             console.log(`${reaction}投票成功:`, result)
             
-            fetchPostReviews(post.id, post, currentAccount?.address).then(fetchedReviews => {
-              setReviews(fetchedReviews)
-            })
+            // 投票成功後に画面をリロードしてレビュー一覧を取得する(この方法が良いかは不明)
+            setTimeout(() => {
+              window.location.reload()
+            }, 1000)
           },
           onError: (err) => {
             console.error(`${reaction}投票エラー:`, err)
