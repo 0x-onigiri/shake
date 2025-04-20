@@ -115,7 +115,7 @@ export async function fetchPost(
   const postMetadata: PostMetadata = {
     id: postMetadataFields.id.id,
     price: postMetadataFields.price ? Number(postMetadataFields.price) : 0,
-    reviewObjId: postMetadataFields.reviews.fields.id.id,
+    reviews: postMetadataFields.reviews.fields.contents,
   }
 
   const post: Post = {
@@ -152,7 +152,7 @@ export async function fetchPostContent(
 
 // TODO: contentが暗号化前提になっているが、無料記事の場合は暗号化しないようにする（別関数でもok）
 export async function createPaidPost(tx: Transaction, userObjectId: string, title: string, encryptedContent: Uint8Array, price: number) {
-  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=5`, {
+  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=10`, {
     method: 'PUT',
     body: encryptedContent,
   })
@@ -179,7 +179,7 @@ export async function createPaidPost(tx: Transaction, userObjectId: string, titl
   )
 }
 export async function createFreePost(tx: Transaction, userObjectId: string, title: string, content: string) {
-  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=5`, {
+  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=10`, {
     method: 'PUT',
     body: content,
   })
@@ -218,16 +218,16 @@ export async function createReview(tx: Transaction, postMetadataId: string, cont
   )
 }
 
-export async function voteForReview(tx: Transaction, postMetadataId: string, reaction: 'Helpful' | 'NotHelpful') {
+export async function voteForReview(tx: Transaction, reviewId: string, reaction: 'Helpful' | 'NotHelpful') {
   return BlogModule.voteForReview(
     tx,
     SHAKE_ONIGIRI.testnet.packageId,
-    postMetadataId,
+    reviewId,
     reaction
   )
 }
 
-export async function fetchPostReviews(postId: string, existingPost?: Post): Promise<any[]> {
+export async function fetchPostReviews(postId: string, existingPost?: Post, currentUserAddress?: string): Promise<any[]> {
 
   try {
     const post = existingPost || await fetchPost(postId)
@@ -237,21 +237,18 @@ export async function fetchPostReviews(postId: string, existingPost?: Post): Pro
     }
     const reviews = []
 
-    const dynamicFields = await suiClient.getDynamicFields({
-      parentId: post.metadata.reviewObjId
-    })
-
-    console.log('dynamicFields', dynamicFields)
+    // post.metadata.reviewsからレビューIDを取得
+    const reviewIds = post.metadata.reviews || []
     
-    for (const field of dynamicFields.data) {
-      console.log('field', field)
+    for (const reviewId of reviewIds) {
       try {
-        const reviewObj = await suiClient.getDynamicFieldObject({
-          parentId: post.metadata.reviewObjId,
-          name: {
-            type: field.name.type,
-            value: field.name.value
-          }
+        // レビューオブジェクトを直接取得
+        const reviewObj = await suiClient.getObject({
+          id: reviewId,
+          options: {
+            showContent: true,
+            showOwner: true,
+          },
         })
         
         if (reviewObj.error) {
@@ -259,21 +256,35 @@ export async function fetchPostReviews(postId: string, existingPost?: Post): Pro
           continue
         }
         
+        const fields = objResToFields(reviewObj)
+
+        const authorAddress = fields.reviewer
+        if (authorAddress === 'unknown') {
+          throw new Error('Invalid post owner')
+        }
+        
+        if (!fields || !fields.id || !fields.content) {
+          continue
+        }
+        
         let authorData: { name: string; image: undefined | string } = { 
           name: '匿名ユーザー', 
           image: undefined 
         }
+        let isCurrentUserReview = false
+        
         try {
-          console.log('field.name', field.name)
-          if (field.name.value) {
-            let userId = field.name.value;
-            if (userId && typeof userId === 'string') {
-              const author = await fetchUser(userId)
-              if (author) {
-                authorData = {
-                  name: author.username || '匿名ユーザー',
-                  image: author.image
-                }
+          if (authorAddress && authorAddress !== 'unknown') {
+            // 現在のユーザーのアドレスとレビュー作成者のアドレスを比較
+            if (currentUserAddress && currentUserAddress === authorAddress) {
+              isCurrentUserReview = true
+            }
+            
+            const author = await fetchUser(authorAddress)
+            if (author) {
+              authorData = {
+                name: author.username || '匿名ユーザー',
+                image: author.image
               }
             }
           }
@@ -281,22 +292,52 @@ export async function fetchPostReviews(postId: string, existingPost?: Post): Pro
           console.error('レビュー作成者取得エラー:', err)
         }
 
-        const fields = objResToFields(reviewObj)
-        console.log('fields', fields)
-        
-        // レビューオブジェクトを作成
-        if (fields && fields.id && fields.content) {
-          const review = {
-            id: fields.id.id,
-            content: fields.content,
-            author: authorData,
-            createdAt: new Date(Number(fields.created_at)).toLocaleString('ja-JP'),
-            helpfulCount: 0, // todo 評価の取得処理
-            notHelpfulCount: 0 // todo 評価の取得処理
+        let helpfulCount = 0
+        let notHelpfulCount = 0
+        let currentUserVote: null | 'Helpful' | 'NotHelpful' = null
+
+        try {
+          const voteCountMap = fields.review_vote_count.fields.contents;
+          for (let i = 0; i < voteCountMap.length; i++) {
+            const voteItem = voteCountMap[i];
+            if (voteItem.fields) {
+              const key = voteItem.fields.key.variant;
+              const value = Number(voteItem.fields.value);
+              
+              if (key === 'Helpful') {
+                helpfulCount = value;
+              } else if (key === 'NotHelpful') {
+                notHelpfulCount = value;
+              }
+            }
           }
-          
-          reviews.push(review)
+
+          if (currentUserAddress && fields.review_votes && fields.review_votes.fields && fields.review_votes.fields.contents) {
+            const reviewVotes = fields.review_votes.fields.contents;
+            for (let i = 0; i < reviewVotes.length; i++) {
+              const voteItem = reviewVotes[i];
+              if (voteItem.fields && voteItem.fields.key === currentUserAddress) {
+                currentUserVote = voteItem.fields.value.variant;
+                break;
+              }
+            }
+          }
+        } catch (err) {
+          console.error('レビュー評価数取得エラー:', err);
         }
+
+        const review = {
+          id: fields.id.id,
+          content: fields.content,
+          author: authorData,
+          createdAt: new Date(Number(fields.created_at)).toLocaleString('ja-JP'),
+          helpfulCount: helpfulCount,
+          notHelpfulCount: notHelpfulCount,
+          isCurrentUserReview,
+          currentUserVote
+        }
+        
+        reviews.push(review)
       } catch (err) {
         console.error('レビューデータ取得エラー:', err)
       }

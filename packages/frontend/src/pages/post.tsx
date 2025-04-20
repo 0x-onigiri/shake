@@ -83,12 +83,11 @@ function FreePostDetail({
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction()
   const isAuthor = currentAccount?.address === post.author
 
-  // レビュー一覧を取得
   useEffect(() => {
     const getReviews = async () => {
       try {
         setIsLoadingReviews(true)
-        const fetchedReviews = await fetchPostReviews(post.id, post)
+        const fetchedReviews = await fetchPostReviews(post.id, post, currentAccount?.address)
         setReviews(fetchedReviews)
       } catch (error) {
         console.error('レビュー取得エラー:', error)
@@ -98,7 +97,7 @@ function FreePostDetail({
     }
     
     getReviews()
-  }, [post.id, post])
+  }, [post.id, post, currentAccount?.address])
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -120,8 +119,7 @@ function FreePostDetail({
             console.log('レビュー投稿成功:', result)
             setReviewContent('')
             
-            // レビュー投稿後に一覧を再取得
-            fetchPostReviews(post.id, post).then(fetchedReviews => {
+            fetchPostReviews(post.id, post, currentAccount?.address).then(fetchedReviews => {
               setReviews(fetchedReviews)
             })
           },
@@ -139,12 +137,12 @@ function FreePostDetail({
     }
   }
 
-  const handleVoteReview = (reaction: 'Helpful' | 'NotHelpful') => {
+  const handleVoteReview = (reaction: 'Helpful' | 'NotHelpful', reviewId: string) => {
     if (!post.metadata?.id) return
 
     try {
       const tx = new Transaction()
-      voteForReview(tx, post.metadata.id, reaction)
+      voteForReview(tx, reviewId, reaction)
 
       signAndExecuteTransaction(
         {
@@ -155,8 +153,7 @@ function FreePostDetail({
           onSuccess: (result) => {
             console.log(`${reaction}投票成功:`, result)
             
-            // 投票後にレビュー一覧を再取得
-            fetchPostReviews(post.id, post).then(fetchedReviews => {
+            fetchPostReviews(post.id, post, currentAccount?.address).then(fetchedReviews => {
               setReviews(fetchedReviews)
             })
           },
@@ -273,12 +270,11 @@ function PaidPostDetail({
   const currentAccount = useCurrentAccount()
   const isAuthor = currentAccount?.address === post.author
 
-  // レビュー一覧を取得
   useEffect(() => {
     const getReviews = async () => {
       try {
         setIsLoadingReviews(true)
-        const fetchedReviews = await fetchPostReviews(post.id, post)
+        const fetchedReviews = await fetchPostReviews(post.id, post, currentAccount?.address)
         setReviews(fetchedReviews)
       } catch (error) {
         console.error('レビュー取得エラー:', error)
@@ -288,7 +284,7 @@ function PaidPostDetail({
     }
     
     getReviews()
-  }, [post.id, post])
+  }, [post.id, post, currentAccount?.address])
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -310,8 +306,7 @@ function PaidPostDetail({
             console.log('レビュー投稿成功:', result)
             setReviewContent('')
             
-            // レビュー投稿後に一覧を再取得
-            fetchPostReviews(post.id, post).then(fetchedReviews => {
+            fetchPostReviews(post.id, post, currentAccount?.address).then(fetchedReviews => {
               setReviews(fetchedReviews)
             })
           },
@@ -329,12 +324,12 @@ function PaidPostDetail({
     }
   }
 
-  const handleVoteReview = (reaction: 'Helpful' | 'NotHelpful') => {
+  const handleVoteReview = (reaction: 'Helpful' | 'NotHelpful', reviewId: string) => {
     if (!post.metadata?.id) return
 
     try {
       const tx = new Transaction()
-      voteForReview(tx, post.metadata.id, reaction)
+      voteForReview(tx, reviewId, reaction)
 
       signAndExecuteTransaction(
         {
@@ -345,8 +340,7 @@ function PaidPostDetail({
           onSuccess: (result) => {
             console.log(`${reaction}投票成功:`, result)
             
-            // 投票後にレビュー一覧を再取得
-            fetchPostReviews(post.id, post).then(fetchedReviews => {
+            fetchPostReviews(post.id, post, currentAccount?.address).then(fetchedReviews => {
               setReviews(fetchedReviews)
             })
           },
