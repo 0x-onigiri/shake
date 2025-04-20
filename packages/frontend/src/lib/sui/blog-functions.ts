@@ -54,4 +54,33 @@ export const BlogModule
       ],
     })
   },
+  createReview: (
+    tx: Transaction,
+    packageId: string,
+    postMetadataObjectId: string,
+    content: string,
+  ): TransactionResult => {
+    return tx.moveCall({
+      target: `${packageId}::blog::create_review`,
+      arguments: [
+        tx.object(postMetadataObjectId),
+        tx.pure.string(content),
+        tx.object('0x6'),
+      ],
+    })
+  },
+  voteForReview: (
+    tx: Transaction,
+    packageId: string,
+    postMetadataObjectId: string,
+    reaction: 'Helpful' | 'NotHelpful',
+  ): TransactionResult => {
+    return tx.moveCall({
+      target: `${packageId}::blog::vote_for_review`,
+      arguments: [
+        tx.object(postMetadataObjectId),
+        tx.pure.vector('u8', Array.from(new TextEncoder().encode(reaction))),
+      ],
+    })
+  },
 }

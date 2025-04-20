@@ -15,7 +15,7 @@ import { PUBLISHER } from '@/constants'
 
 const uploadImageToWalrus = async (file: File) => {
   try {
-    const response = await fetch(`${PUBLISHER}/v1/blobs`, {
+    const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=5`, {
       method: 'PUT',
       body: file,
     })

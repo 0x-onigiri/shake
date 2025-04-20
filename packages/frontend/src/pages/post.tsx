@@ -7,7 +7,7 @@ import { fromHex } from '@mysten/sui/utils'
 import { fetchPost } from '@/lib/shake-client'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import type { Post } from '@/types'
-import { fetchUser, fetchPostContent } from '@/lib/shake-client'
+import { fetchUser, fetchPostContent, createReview, voteForReview, fetchPostReviews } from '@/lib/shake-client'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +16,7 @@ import { CalendarIcon, Clock, Book } from 'lucide-react'
 import { getInputCoins, downloadAndDecrypt, MoveCallConstructor } from '@/lib/sui/utils'
 import { BlogModule } from '@/lib/sui/blog-functions'
 import { devInspectAndGetExecutionResults } from '@polymedia/suitcase-core'
+import { ReviewSection } from '@/components/posts/review-section'
 
 export default function PostPage() {
   const { postId } = useParams()
@@ -73,6 +74,101 @@ function FreePostDetail({
     queryKey: ['fetchPostContent', post.postBlobId],
     queryFn: () => fetchPostContent(post.postBlobId),
   })
+  
+  const [reviewContent, setReviewContent] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [reviews, setReviews] = useState<any[]>([])
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true)
+  const currentAccount = useCurrentAccount()
+  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction()
+  const isAuthor = currentAccount?.address === post.author
+
+  // レビュー一覧を取得
+  useEffect(() => {
+    const getReviews = async () => {
+      try {
+        setIsLoadingReviews(true)
+        const fetchedReviews = await fetchPostReviews(post.id, post)
+        setReviews(fetchedReviews)
+      } catch (error) {
+        console.error('レビュー取得エラー:', error)
+      } finally {
+        setIsLoadingReviews(false)
+      }
+    }
+    
+    getReviews()
+  }, [post.id, post])
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!reviewContent.trim() || isSubmitting || !post.metadata?.id) return
+
+    setIsSubmitting(true)
+
+    try {
+      const tx = new Transaction()
+      createReview(tx, post.metadata.id, reviewContent)
+
+      signAndExecuteTransaction(
+        {
+          transaction: tx,
+          chain: 'sui:testnet',
+        },
+        {
+          onSuccess: (result) => {
+            console.log('レビュー投稿成功:', result)
+            setReviewContent('')
+            
+            // レビュー投稿後に一覧を再取得
+            fetchPostReviews(post.id, post).then(fetchedReviews => {
+              setReviews(fetchedReviews)
+            })
+          },
+          onError: (err) => {
+            console.error('レビュー投稿エラー:', err)
+          },
+          onSettled: () => {
+            setIsSubmitting(false)
+          }
+        }
+      )
+    } catch (err) {
+      console.error('レビュー投稿エラー:', err)
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleVoteReview = (reaction: 'Helpful' | 'NotHelpful') => {
+    if (!post.metadata?.id) return
+
+    try {
+      const tx = new Transaction()
+      voteForReview(tx, post.metadata.id, reaction)
+
+      signAndExecuteTransaction(
+        {
+          transaction: tx,
+          chain: 'sui:testnet',
+        },
+        {
+          onSuccess: (result) => {
+            console.log(`${reaction}投票成功:`, result)
+            
+            // 投票後にレビュー一覧を再取得
+            fetchPostReviews(post.id, post).then(fetchedReviews => {
+              setReviews(fetchedReviews)
+            })
+          },
+          onError: (err) => {
+            console.error(`${reaction}投票エラー:`, err)
+          }
+        }
+      )
+    } catch (err) {
+      console.error(`${reaction}投票エラー:`, err)
+    }
+  }
 
   if (!user) {
     return null
@@ -115,6 +211,17 @@ function FreePostDetail({
 
         </div>
         {content && <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: content }} />}
+
+        <ReviewSection
+          reviews={reviews}
+          reviewContent={reviewContent}
+          isSubmitting={isSubmitting}
+          isAuthor={isAuthor}
+          isLoadingReviews={isLoadingReviews}
+          onReviewContentChange={setReviewContent}
+          onSubmitReview={handleSubmitReview}
+          onVoteReview={handleVoteReview}
+        />
       </div>
     </div>
   )
@@ -158,6 +265,100 @@ function PaidPostDetail({
   const [currentSessionKey, setCurrentSessionKey] = useState<SessionKey | null>(null)
   const [, setReloadKey] = useState(0)
   const [purchased, setPurchased] = useState(false)
+
+  const [reviewContent, setReviewContent] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [reviews, setReviews] = useState<any[]>([])
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true)
+  const currentAccount = useCurrentAccount()
+  const isAuthor = currentAccount?.address === post.author
+
+  // レビュー一覧を取得
+  useEffect(() => {
+    const getReviews = async () => {
+      try {
+        setIsLoadingReviews(true)
+        const fetchedReviews = await fetchPostReviews(post.id, post)
+        setReviews(fetchedReviews)
+      } catch (error) {
+        console.error('レビュー取得エラー:', error)
+      } finally {
+        setIsLoadingReviews(false)
+      }
+    }
+    
+    getReviews()
+  }, [post.id, post])
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!reviewContent.trim() || isSubmitting || !post.metadata?.id) return
+
+    setIsSubmitting(true)
+
+    try {
+      const tx = new Transaction()
+      createReview(tx, post.metadata.id, reviewContent)
+
+      signAndExecuteTransaction(
+        {
+          transaction: tx,
+          chain: 'sui:testnet',
+        },
+        {
+          onSuccess: (result) => {
+            console.log('レビュー投稿成功:', result)
+            setReviewContent('')
+            
+            // レビュー投稿後に一覧を再取得
+            fetchPostReviews(post.id, post).then(fetchedReviews => {
+              setReviews(fetchedReviews)
+            })
+          },
+          onError: (err) => {
+            console.error('レビュー投稿エラー:', err)
+          },
+          onSettled: () => {
+            setIsSubmitting(false)
+          }
+        }
+      )
+    } catch (err) {
+      console.error('レビュー投稿エラー:', err)
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleVoteReview = (reaction: 'Helpful' | 'NotHelpful') => {
+    if (!post.metadata?.id) return
+
+    try {
+      const tx = new Transaction()
+      voteForReview(tx, post.metadata.id, reaction)
+
+      signAndExecuteTransaction(
+        {
+          transaction: tx,
+          chain: 'sui:testnet',
+        },
+        {
+          onSuccess: (result) => {
+            console.log(`${reaction}投票成功:`, result)
+            
+            // 投票後にレビュー一覧を再取得
+            fetchPostReviews(post.id, post).then(fetchedReviews => {
+              setReviews(fetchedReviews)
+            })
+          },
+          onError: (err) => {
+            console.error(`${reaction}投票エラー:`, err)
+          }
+        }
+      )
+    } catch (err) {
+      console.error(`${reaction}投票エラー:`, err)
+    }
+  }
 
   console.log('decryptedFileUrls', decryptedFileUrls)
 
@@ -353,6 +554,16 @@ function PaidPostDetail({
 
         {decryptedFileUrls && decryptedFileUrls.length > 0 && <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: decryptedFileUrls[0] }} />}
 
+        <ReviewSection
+          reviews={reviews}
+          reviewContent={reviewContent}
+          isSubmitting={isSubmitting}
+          isAuthor={isAuthor}
+          isLoadingReviews={isLoadingReviews}
+          onReviewContentChange={setReviewContent}
+          onSubmitReview={handleSubmitReview}
+          onVoteReview={handleVoteReview}
+        />
       </div>
     </div>
   )
