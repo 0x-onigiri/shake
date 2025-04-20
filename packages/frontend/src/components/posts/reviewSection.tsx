@@ -103,7 +103,7 @@ export function ReviewSection({
                 <span className="text-sm text-gray-500">{review.createdAt}</span>
               </div>
               
-              <p className="mb-3">{review.content}</p>
+              <p className="mb-3 whitespace-pre-line break-words">{review.content}</p>
               
               <div className="flex gap-4">
                 {isAuthor || review.isCurrentUserReview ? (
