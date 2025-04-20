@@ -51,7 +51,7 @@ export function ReviewSection({
       <div className="border-t pt-8">
         <h2 className="text-2xl font-bold mb-4">レビュー {reviews.length}件</h2>
         
-        {!isAuthor && (
+        {!isAuthor && !reviews.some(review => review.isCurrentUserReview) ? (
           <form onSubmit={onSubmitReview} className="space-y-4">
             <Textarea
               placeholder="コメントを入力..."
@@ -73,7 +73,11 @@ export function ReviewSection({
               </Button>
             </div>
           </form>
-        )}
+        ) : reviews.some(review => review.isCurrentUserReview) && !isAuthor ? (
+          <div className="bg-secondary/20 border border-secondary/30 p-4 rounded-md mb-6">
+            <p className="text-secondary-foreground text-sm">すでにレビューを投稿済みです</p>
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-6">

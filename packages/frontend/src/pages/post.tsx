@@ -101,6 +101,12 @@ function FreePostDetail({
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (reviews.some(review => review.isCurrentUserReview)) {
+      console.log('すでにレビューを投稿済みです')
+      return
+    }
+    
     if (!reviewContent.trim() || isSubmitting || !post.metadata?.id) return
 
     setIsSubmitting(true)
@@ -290,6 +296,12 @@ function PaidPostDetail({
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (reviews.some(review => review.isCurrentUserReview)) {
+      console.log('すでにレビューを投稿済みです')
+      return
+    }
+    
     if (!reviewContent.trim() || isSubmitting || !post.metadata?.id) return
 
     setIsSubmitting(true)
