@@ -11,36 +11,14 @@ import { Transaction } from '@mysten/sui/transactions'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { UserModule } from '@/lib/sui/user-functions'
 import { Textarea } from '@/components/ui/textarea'
-import { PUBLISHER } from '@/constants'
+import { uploadToWalrus } from '@/lib/sui/walrus'
 
-// TODO: 共通化
-const uploadImageToWalrus = async (file: File) => {
-  try {
-    const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=5`, {
-      method: 'PUT',
-      body: file,
-    })
-
-    if (!response.ok) {
-      throw new Error(`画像アップロード失敗: ${response.statusText}`)
-    }
-
-    return await response.json()
-  }
-  catch (error) {
-    console.error('画像アップロードエラー:', error)
-    throw error
-  }
-}
-
-// フォームの状態を定義する型
 export type FormState = {
   username: string
   bio: string
   image: File | null
 }
 
-// アクションの結果を定義する型
 export type ActionState = {
   message?: string
   error?: string
@@ -52,7 +30,6 @@ export type ActionState = {
   }
 }
 
-// 初期状態
 const initialState: ActionState = {
   message: '',
   error: '',
@@ -122,25 +99,7 @@ export default function NewUserPage() {
         }
       }
 
-      const imageResponse = await uploadImageToWalrus(imageFile)
-      console.log('画像アップロード成功:', imageResponse)
-
-      let imageBlobId = ''
-      // let imageSuiObjectId = ''
-      // const imageCost = 0
-
-      if (imageResponse.newlyCreated) {
-        imageBlobId = imageResponse.newlyCreated.blobObject.blobId
-      // imageSuiObjectId = imageResponse.newlyCreated.blobObject.id
-      }
-      else if (imageResponse.alreadyCertified) {
-        imageBlobId = imageResponse.alreadyCertified.blobId
-      // alreadyCertifiedの場合はオブジェクトIDが直接含まれていない可能性があります
-      // トランザクションダイジェストから取得する必要があるかもしれません
-      // imageSuiObjectId
-      //     = imageResponse.alreadyCertified.event?.txDigest || '不明'
-      }
-
+      const blobId = await uploadToWalrus(imageFile)
       const tx = new Transaction()
 
       UserModule.createUser(
@@ -148,7 +107,7 @@ export default function NewUserPage() {
         SHAKE_ONIGIRI.testnet.packageId,
         SHAKE_ONIGIRI.testnet.userListObjectId,
         username,
-        imageBlobId,
+        blobId,
         bio,
       )
 

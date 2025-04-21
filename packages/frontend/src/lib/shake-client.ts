@@ -3,8 +3,9 @@ import { SHAKE_ONIGIRI } from '@/constants'
 import { objResToFields, objResToOwner } from '@polymedia/suitcase-core'
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client'
 import type { User, Post, PostMetadata, ReviewReaction } from '@/types'
-import { PUBLISHER, AGGREGATOR } from '@/constants'
+import { AGGREGATOR } from '@/constants'
 import { BlogModule } from '@/lib/sui/blog-functions'
+import { uploadToWalrus } from '@/lib/sui/walrus'
 
 const suiClient = new SuiClient({ url: getFullnodeUrl('testnet') })
 
@@ -152,22 +153,7 @@ export async function fetchPostContent(
 
 // TODO: contentが暗号化前提になっているが、無料記事の場合は暗号化しないようにする（別関数でもok）
 export async function createPaidPost(tx: Transaction, userObjectId: string, title: string, encryptedContent: Uint8Array, price: number) {
-  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=5`, {
-    method: 'PUT',
-    body: encryptedContent,
-  })
-
-  if (!response.ok) {
-    throw new Error(`アップロード失敗: ${response.statusText}`)
-  }
-
-  const result = await response.json()
-  const blobId = result.newlyCreated?.blobObject?.blobId || result.alreadyCertified.blobId
-  if (!blobId) {
-    throw new Error('Blob IDが見つかりません')
-  }
-
-  console.log('Blob ID:', blobId)
+  const blobId = await uploadToWalrus(encryptedContent)
 
   return BlogModule.createPost(
     tx,
@@ -179,22 +165,7 @@ export async function createPaidPost(tx: Transaction, userObjectId: string, titl
   )
 }
 export async function createFreePost(tx: Transaction, userObjectId: string, title: string, content: string) {
-  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=5`, {
-    method: 'PUT',
-    body: content,
-  })
-
-  if (!response.ok) {
-    throw new Error(`アップロード失敗: ${response.statusText}`)
-  }
-
-  const result = await response.json()
-  const blobId = result.newlyCreated?.blobObject?.blobId || result.alreadyCertified.blobId
-  if (!blobId) {
-    throw new Error('Blob IDが見つかりません')
-  }
-
-  console.log('Blob ID:', blobId)
+  const blobId = await uploadToWalrus(content)
 
   return BlogModule.createPost(
     tx,
