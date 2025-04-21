@@ -41,7 +41,7 @@ function View({
   })
   const currentAccount = useCurrentAccount()
 
-  if (!post || !post.metadata || !currentAccount) {
+  if (!post || !post.metadata) {
     return <div>Postが見つかりません</div>
   }
 
@@ -56,7 +56,7 @@ function View({
   return (
     <PaidPostDetail
       post={post}
-      walletAddress={currentAccount.address}
+      walletAddress={currentAccount?.address}
     />
   )
 }
@@ -74,7 +74,7 @@ function FreePostDetail({
     queryKey: ['fetchPostContent', post.postBlobId],
     queryFn: () => fetchPostContent(post.postBlobId),
   })
-  
+
   const [reviewContent, setReviewContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [reviews, setReviews] = useState<any[]>([])
@@ -243,7 +243,7 @@ function PaidPostDetail({
   walletAddress,
 }: {
   post: Post
-  walletAddress: string
+  walletAddress: string | undefined
 }) {
   const { data: user } = useSuspenseQuery({
     queryKey: ['fetchUser', post.author],
@@ -363,8 +363,7 @@ function PaidPostDetail({
   console.log('decryptedFileUrls', decryptedFileUrls)
 
   const onView = async () => {
-    console.log('currentSessionKey', currentSessionKey)
-    if (!post.metadata) {
+    if (!post.metadata || !walletAddress) {
       return
     }
 
@@ -433,7 +432,7 @@ function PaidPostDetail({
   }
 
   const purchase = async () => {
-    if (!post.metadata) {
+    if (!post.metadata || !walletAddress) {
       return
     }
 
