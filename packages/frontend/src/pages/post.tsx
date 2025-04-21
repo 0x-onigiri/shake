@@ -6,7 +6,7 @@ import { Transaction } from '@mysten/sui/transactions'
 import { fromHex } from '@mysten/sui/utils'
 import { fetchPost } from '@/lib/shake-client'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import type { Post } from '@/types'
+import type { Post, ReviewReaction } from '@/types'
 import { fetchUser, fetchPostContent, createReview, voteForReview, fetchPostReviews } from '@/lib/shake-client'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -25,9 +25,7 @@ export default function PostPage() {
     return <div>Post IDが指定されていません</div>
   }
 
-  return (
-    <View postId={postId} />
-  )
+  return (<View postId={postId} />)
 }
 
 function View({
@@ -41,22 +39,20 @@ function View({
   })
   const currentAccount = useCurrentAccount()
 
-  if (!post || !post.metadata || !currentAccount) {
+  if (!post || !post.metadata) {
     return <div>Postが見つかりません</div>
   }
 
   if (post.metadata.price === 0) {
     return (
-      <FreePostDetail
-        post={post}
-      />
+      <FreePostDetail post={post} />
     )
   }
 
   return (
     <PaidPostDetail
       post={post}
-      walletAddress={currentAccount.address}
+      walletAddress={currentAccount?.address}
     />
   )
 }
@@ -74,13 +70,13 @@ function FreePostDetail({
     queryKey: ['fetchPostContent', post.postBlobId],
     queryFn: () => fetchPostContent(post.postBlobId),
   })
-  
+
   const [reviewContent, setReviewContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [reviews, setReviews] = useState<any[]>([])
   const [isLoadingReviews, setIsLoadingReviews] = useState(true)
   const currentAccount = useCurrentAccount()
-  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction()
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction()
   const isAuthor = currentAccount?.address === post.author
 
   // レビュー一覧を取得
@@ -90,13 +86,15 @@ function FreePostDetail({
         setIsLoadingReviews(true)
         const fetchedReviews = await fetchPostReviews(post.id, post)
         setReviews(fetchedReviews)
-      } catch (error) {
+      }
+      catch (error) {
         console.error('レビュー取得エラー:', error)
-      } finally {
+      }
+      finally {
         setIsLoadingReviews(false)
       }
     }
-    
+
     getReviews()
   }, [post.id, post])
 
@@ -110,63 +108,41 @@ function FreePostDetail({
       const tx = new Transaction()
       createReview(tx, post.metadata.id, reviewContent)
 
-      signAndExecuteTransaction(
-        {
-          transaction: tx,
-          chain: 'sui:testnet',
-        },
-        {
-          onSuccess: (result) => {
-            console.log('レビュー投稿成功:', result)
-            setReviewContent('')
-            
-            // レビュー投稿後に一覧を再取得
-            fetchPostReviews(post.id, post).then(fetchedReviews => {
-              setReviews(fetchedReviews)
-            })
-          },
-          onError: (err) => {
-            console.error('レビュー投稿エラー:', err)
-          },
-          onSettled: () => {
-            setIsSubmitting(false)
-          }
-        }
-      )
-    } catch (err) {
+      const result = await signAndExecuteTransaction({ transaction: tx })
+      console.log('レビュー投稿成功:', result)
+      setReviewContent('')
+
+      // レビュー投稿後に一覧を再取得
+      const fetchedReviews = await fetchPostReviews(post.id, post)
+      setReviews(fetchedReviews)
+    }
+    catch (err) {
       console.error('レビュー投稿エラー:', err)
+    }
+    finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleVoteReview = (reaction: 'Helpful' | 'NotHelpful') => {
+  const handleVoteReview = async (reaction: ReviewReaction) => {
     if (!post.metadata?.id) return
 
     try {
       const tx = new Transaction()
       voteForReview(tx, post.metadata.id, reaction)
+      const result = await signAndExecuteTransaction({ transaction: tx })
+      console.log('レビュー投稿成功:', result)
+      setReviewContent('')
 
-      signAndExecuteTransaction(
-        {
-          transaction: tx,
-          chain: 'sui:testnet',
-        },
-        {
-          onSuccess: (result) => {
-            console.log(`${reaction}投票成功:`, result)
-            
-            // 投票後にレビュー一覧を再取得
-            fetchPostReviews(post.id, post).then(fetchedReviews => {
-              setReviews(fetchedReviews)
-            })
-          },
-          onError: (err) => {
-            console.error(`${reaction}投票エラー:`, err)
-          }
-        }
-      )
-    } catch (err) {
+      // レビュー投稿後に一覧を再取得
+      const fetchedReviews = await fetchPostReviews(post.id, post)
+      setReviews(fetchedReviews)
+    }
+    catch (err) {
       console.error(`${reaction}投票エラー:`, err)
+    }
+    finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -243,7 +219,7 @@ function PaidPostDetail({
   walletAddress,
 }: {
   post: Post
-  walletAddress: string
+  walletAddress: string | undefined
 }) {
   const { data: user } = useSuspenseQuery({
     queryKey: ['fetchUser', post.author],
@@ -251,7 +227,7 @@ function PaidPostDetail({
   })
 
   const { mutate: signPersonalMessage } = useSignPersonalMessage()
-  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction()
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction()
 
   const suiClient = useSuiClient()
   const sealClient = new SealClient({
@@ -280,13 +256,15 @@ function PaidPostDetail({
         setIsLoadingReviews(true)
         const fetchedReviews = await fetchPostReviews(post.id, post)
         setReviews(fetchedReviews)
-      } catch (error) {
+      }
+      catch (error) {
         console.error('レビュー取得エラー:', error)
-      } finally {
+      }
+      finally {
         setIsLoadingReviews(false)
       }
     }
-    
+
     getReviews()
   }, [post.id, post])
 
@@ -300,62 +278,36 @@ function PaidPostDetail({
       const tx = new Transaction()
       createReview(tx, post.metadata.id, reviewContent)
 
-      signAndExecuteTransaction(
-        {
-          transaction: tx,
-          chain: 'sui:testnet',
-        },
-        {
-          onSuccess: (result) => {
-            console.log('レビュー投稿成功:', result)
-            setReviewContent('')
-            
-            // レビュー投稿後に一覧を再取得
-            fetchPostReviews(post.id, post).then(fetchedReviews => {
-              setReviews(fetchedReviews)
-            })
-          },
-          onError: (err) => {
-            console.error('レビュー投稿エラー:', err)
-          },
-          onSettled: () => {
-            setIsSubmitting(false)
-          }
-        }
-      )
-    } catch (err) {
+      const result = await signAndExecuteTransaction({ transaction: tx })
+      console.log('レビュー投稿成功:', result)
+      setReviewContent('')
+      const fetchedReviews = await fetchPostReviews(post.id, post)
+      setReviews(fetchedReviews)
+    }
+    catch (err) {
       console.error('レビュー投稿エラー:', err)
+      setIsSubmitting(false)
+    }
+    finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleVoteReview = (reaction: 'Helpful' | 'NotHelpful') => {
+  const handleVoteReview = async (reaction: ReviewReaction) => {
     if (!post.metadata?.id) return
 
     try {
       const tx = new Transaction()
       voteForReview(tx, post.metadata.id, reaction)
 
-      signAndExecuteTransaction(
-        {
-          transaction: tx,
-          chain: 'sui:testnet',
-        },
-        {
-          onSuccess: (result) => {
-            console.log(`${reaction}投票成功:`, result)
-            
-            // 投票後にレビュー一覧を再取得
-            fetchPostReviews(post.id, post).then(fetchedReviews => {
-              setReviews(fetchedReviews)
-            })
-          },
-          onError: (err) => {
-            console.error(`${reaction}投票エラー:`, err)
-          }
-        }
-      )
-    } catch (err) {
+      const result = await signAndExecuteTransaction({ transaction: tx })
+      console.log(`${reaction}投票成功:`, result)
+
+      // 投票後にレビュー一覧を再取得
+      const fetchedReviews = await fetchPostReviews(post.id, post)
+      setReviews(fetchedReviews)
+    }
+    catch (err) {
       console.error(`${reaction}投票エラー:`, err)
     }
   }
@@ -363,8 +315,7 @@ function PaidPostDetail({
   console.log('decryptedFileUrls', decryptedFileUrls)
 
   const onView = async () => {
-    console.log('currentSessionKey', currentSessionKey)
-    if (!post.metadata) {
+    if (!post.metadata || !walletAddress) {
       return
     }
 
@@ -433,7 +384,7 @@ function PaidPostDetail({
   }
 
   const purchase = async () => {
-    if (!post.metadata) {
+    if (!post.metadata || !walletAddress) {
       return
     }
 
@@ -541,8 +492,8 @@ function PaidPostDetail({
               )}
             {post.metadata && post.metadata.price > 0 && !purchased
               && (
-                <Button size="sm" className="gap-2" onClick={purchase}>
-                  購入
+                <Button className="gap-2" onClick={purchase}>
+                  記事を購入
                   {' '}
                   {post.metadata.price / 1000000000}
                   {' '}

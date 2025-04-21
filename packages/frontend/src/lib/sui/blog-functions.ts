@@ -1,4 +1,5 @@
 import { Transaction, TransactionResult, TransactionArgument } from '@mysten/sui/transactions'
+import type { ReviewReaction } from '@/types'
 
 /**
  * Build transactions for the shake::blog Sui module.
@@ -73,7 +74,7 @@ export const BlogModule
     tx: Transaction,
     packageId: string,
     postMetadataObjectId: string,
-    reaction: 'Helpful' | 'NotHelpful',
+    reaction: ReviewReaction,
   ): TransactionResult => {
     return tx.moveCall({
       target: `${packageId}::blog::vote_for_review`,
