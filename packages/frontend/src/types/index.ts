@@ -18,3 +18,5 @@ export type PostMetadata = {
   price: number
   reviewObjId: string
 }
+
+export type ReviewReaction = 'Helpful' | 'NotHelpful'

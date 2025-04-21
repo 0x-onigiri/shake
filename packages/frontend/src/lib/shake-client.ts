@@ -2,7 +2,7 @@ import { Transaction } from '@mysten/sui/transactions'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { objResToFields, objResToOwner } from '@polymedia/suitcase-core'
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client'
-import type { User, Post, PostMetadata } from '@/types'
+import type { User, Post, PostMetadata, ReviewReaction } from '@/types'
 import { PUBLISHER, AGGREGATOR } from '@/constants'
 import { BlogModule } from '@/lib/sui/blog-functions'
 
@@ -214,35 +214,34 @@ export async function createReview(tx: Transaction, postMetadataId: string, cont
     tx,
     SHAKE_ONIGIRI.testnet.packageId,
     postMetadataId,
-    content
+    content,
   )
 }
 
-export async function voteForReview(tx: Transaction, postMetadataId: string, reaction: 'Helpful' | 'NotHelpful') {
+export async function voteForReview(tx: Transaction, postMetadataId: string, reaction: ReviewReaction) {
   return BlogModule.voteForReview(
     tx,
     SHAKE_ONIGIRI.testnet.packageId,
     postMetadataId,
-    reaction
+    reaction,
   )
 }
 
 export async function fetchPostReviews(postId: string, existingPost?: Post): Promise<any[]> {
-
   try {
     const post = existingPost || await fetchPost(postId)
-    
+
     if (!post || !post.metadata) {
       throw new Error('データが見つかりません')
     }
     const reviews = []
 
     const dynamicFields = await suiClient.getDynamicFields({
-      parentId: post.metadata.reviewObjId
+      parentId: post.metadata.reviewObjId,
     })
 
     console.log('dynamicFields', dynamicFields)
-    
+
     for (const field of dynamicFields.data) {
       console.log('field', field)
       try {
@@ -250,40 +249,41 @@ export async function fetchPostReviews(postId: string, existingPost?: Post): Pro
           parentId: post.metadata.reviewObjId,
           name: {
             type: field.name.type,
-            value: field.name.value
-          }
+            value: field.name.value,
+          },
         })
-        
+
         if (reviewObj.error) {
           console.error('レビュー取得エラー:', reviewObj.error)
           continue
         }
-        
-        let authorData: { name: string; image: undefined | string } = { 
-          name: '匿名ユーザー', 
-          image: undefined 
+
+        let authorData: { name: string, image: undefined | string } = {
+          name: '匿名ユーザー',
+          image: undefined,
         }
         try {
           console.log('field.name', field.name)
           if (field.name.value) {
-            let userId = field.name.value;
+            const userId = field.name.value
             if (userId && typeof userId === 'string') {
               const author = await fetchUser(userId)
               if (author) {
                 authorData = {
                   name: author.username || '匿名ユーザー',
-                  image: author.image
+                  image: author.image,
                 }
               }
             }
           }
-        } catch (err) {
+        }
+        catch (err) {
           console.error('レビュー作成者取得エラー:', err)
         }
 
         const fields = objResToFields(reviewObj)
         console.log('fields', fields)
-        
+
         // レビューオブジェクトを作成
         if (fields && fields.id && fields.content) {
           const review = {
@@ -292,18 +292,20 @@ export async function fetchPostReviews(postId: string, existingPost?: Post): Pro
             author: authorData,
             createdAt: new Date(Number(fields.created_at)).toLocaleString('ja-JP'),
             helpfulCount: 0, // todo 評価の取得処理
-            notHelpfulCount: 0 // todo 評価の取得処理
+            notHelpfulCount: 0, // todo 評価の取得処理
           }
-          
+
           reviews.push(review)
         }
-      } catch (err) {
+      }
+      catch (err) {
         console.error('レビューデータ取得エラー:', err)
       }
     }
-    
+
     return reviews
-  } catch (error) {
+  }
+  catch (error) {
     console.error('レビュー取得エラー:', error)
     return []
   }
