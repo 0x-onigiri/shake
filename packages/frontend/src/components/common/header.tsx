@@ -109,7 +109,6 @@ function WalletButton({
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <div className="flex flex-col gap-3 p-3">
-            {/* {walletAccount?.label && <p>{walletAccount.label}</p>} */}
             <Suspense fallback={<div>Loading...</div>}>
               <UserInfo
                 walletAddress={walletAccount.address}
@@ -144,7 +143,7 @@ function WalletButtonLabel({
         <AvatarImage src={`${AGGREGATOR}/v1/blobs/${user.image}`} alt={user.username} />
         <AvatarFallback>💧</AvatarFallback>
       </Avatar>
-      <span>{user.username}</span>
+      <span className="text-white">{user.username}</span>
     </>
   )
 }
