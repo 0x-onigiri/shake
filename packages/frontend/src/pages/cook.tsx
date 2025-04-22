@@ -63,23 +63,13 @@ function CreatePost({
     verifyKeyServers: false,
   })
 
-  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction({
-    execute: async ({ bytes, signature }) =>
-      await suiClient.executeTransactionBlock({
-        transactionBlock: bytes,
-        signature,
-        options: {
-          showObjectChanges: true,
-          showRawEffects: true,
-          showEffects: true,
-        },
-      }),
-  })
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction()
   const navigate = useNavigate()
   const [pending, setPending] = useState(false)
 
   const handleSave = async (formData: PostFormData) => {
     if (!user) return
+
     try {
       setPending(true)
       const tx = new Transaction()
@@ -101,35 +91,28 @@ function CreatePost({
 
         await createPaidPost(tx, user.id, formData.title, encryptedBytes, formData.amount * 1000000000)
       }
-      signAndExecuteTransaction(
-        {
-          transaction: tx,
-          chain: 'sui:testnet',
-        },
-        {
-          onSuccess: (result) => {
-            console.log('executed transaction', result)
-            const objChange = result.objectChanges?.find(
-              change =>
-                change.type === 'created' && change.objectType === `${SHAKE_ONIGIRI.testnet.packageId}::blog::Post`,
-            )
-            const postId = objChange && objChange.type === 'created' ? objChange.objectId : null
-            if (!postId) {
-              console.error('Post ID not found')
-              return
-            }
-            setPending(false)
-            navigate(`/${postId}`)
-          },
-          onError: (error) => {
-            console.error('error', error)
-            setPending(false)
-          },
-        },
+
+      const { digest } = await signAndExecuteTransaction({ transaction: tx })
+      const { objectChanges } = await suiClient.waitForTransaction({
+        digest,
+        options: { showObjectChanges: true, showEffects: true },
+      })
+
+      const objChange = objectChanges?.find(
+        change =>
+          change.type === 'created' && change.objectType === `${SHAKE_ONIGIRI.testnet.packageId}::blog::Post`,
       )
+      const postId = objChange && objChange.type === 'created' ? objChange.objectId : null
+      if (!postId) {
+        console.error('Post ID not found')
+        return
+      }
+      navigate(`/${postId}`)
     }
     catch (error) {
       console.error('error', error)
+    }
+    finally {
       setPending(false)
     }
   }

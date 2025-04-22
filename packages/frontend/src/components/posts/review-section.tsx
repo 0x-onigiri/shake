@@ -1,6 +1,6 @@
-import { ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+import { ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Tooltip,
   TooltipContent,
@@ -9,11 +9,12 @@ import {
 } from '@/components/ui/tooltip'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AGGREGATOR } from '@/constants'
+import type { ReviewReaction } from '@/types'
 import { cn } from '@/lib/utils'
 
 interface Review {
-  id: string
-  content: string
+  id: string;
+  content: string;
   author: {
     name: string
     image?: string
@@ -21,8 +22,8 @@ interface Review {
   createdAt: string
   helpfulCount: number
   notHelpfulCount: number
-  isCurrentUserReview?: boolean
-  currentUserVote?: 'Helpful' | 'NotHelpful' | null
+  isCurrentUserReview?: boolean;
+  currentUserVote?: ReviewReaction | null;
 }
 
 interface ReviewSectionProps {
@@ -33,7 +34,7 @@ interface ReviewSectionProps {
   isLoadingReviews: boolean
   onReviewContentChange: (value: string) => void
   onSubmitReview: (e: React.FormEvent) => void
-  onVoteReview: (reaction: 'Helpful' | 'NotHelpful', reviewId: string) => void
+  onVoteReview: (reaction: ReviewReaction, reviewId: string) => void
 }
 
 export function ReviewSection({

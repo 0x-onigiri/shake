@@ -2,9 +2,10 @@ import { Transaction } from '@mysten/sui/transactions'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { objResToFields, objResToOwner } from '@polymedia/suitcase-core'
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client'
-import type { User, Post, PostMetadata } from '@/types'
-import { PUBLISHER, AGGREGATOR } from '@/constants'
+import type { User, Post, PostMetadata, ReviewReaction } from '@/types'
+import { AGGREGATOR } from '@/constants'
 import { BlogModule } from '@/lib/sui/blog-functions'
+import { uploadToWalrus } from '@/lib/sui/walrus'
 
 const suiClient = new SuiClient({ url: getFullnodeUrl('testnet') })
 
@@ -152,22 +153,7 @@ export async function fetchPostContent(
 
 // TODO: contentが暗号化前提になっているが、無料記事の場合は暗号化しないようにする（別関数でもok）
 export async function createPaidPost(tx: Transaction, userObjectId: string, title: string, encryptedContent: Uint8Array, price: number) {
-  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=10`, {
-    method: 'PUT',
-    body: encryptedContent,
-  })
-
-  if (!response.ok) {
-    throw new Error(`アップロード失敗: ${response.statusText}`)
-  }
-
-  const result = await response.json()
-  const blobId = result.newlyCreated?.blobObject?.blobId || result.alreadyCertified.blobId
-  if (!blobId) {
-    throw new Error('Blob IDが見つかりません')
-  }
-
-  console.log('Blob ID:', blobId)
+  const blobId = await uploadToWalrus(encryptedContent)
 
   return BlogModule.createPost(
     tx,
@@ -179,22 +165,7 @@ export async function createPaidPost(tx: Transaction, userObjectId: string, titl
   )
 }
 export async function createFreePost(tx: Transaction, userObjectId: string, title: string, content: string) {
-  const response = await fetch(`${PUBLISHER}/v1/blobs?epochs=10`, {
-    method: 'PUT',
-    body: content,
-  })
-
-  if (!response.ok) {
-    throw new Error(`アップロード失敗: ${response.statusText}`)
-  }
-
-  const result = await response.json()
-  const blobId = result.newlyCreated?.blobObject?.blobId || result.alreadyCertified.blobId
-  if (!blobId) {
-    throw new Error('Blob IDが見つかりません')
-  }
-
-  console.log('Blob ID:', blobId)
+  const blobId = await uploadToWalrus(content)
 
   return BlogModule.createPost(
     tx,
@@ -214,11 +185,11 @@ export async function createReview(tx: Transaction, postMetadataId: string, cont
     tx,
     SHAKE_ONIGIRI.testnet.packageId,
     postMetadataId,
-    content
+    content,
   )
 }
 
-export async function voteForReview(tx: Transaction, reviewId: string, reaction: 'Helpful' | 'NotHelpful') {
+export async function voteForReview(tx: Transaction, reviewId: string, reaction: ReviewReaction) {
   return BlogModule.voteForReview(
     tx,
     SHAKE_ONIGIRI.testnet.packageId,
@@ -231,7 +202,7 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
 
   try {
     const post = existingPost || await fetchPost(postId)
-    
+
     if (!post || !post.metadata) {
       throw new Error('データが見つかりません')
     }
@@ -250,7 +221,7 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
             showOwner: true,
           },
         })
-        
+
         if (reviewObj.error) {
           console.error('レビュー取得エラー:', reviewObj.error)
           continue
@@ -266,10 +237,10 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
         if (!fields || !fields.id || !fields.content) {
           continue
         }
-        
-        let authorData: { name: string; image: undefined | string } = { 
-          name: '匿名ユーザー', 
-          image: undefined 
+
+        let authorData: { name: string, image: undefined | string } = {
+          name: '匿名ユーザー',
+          image: undefined,
         }
         let isCurrentUserReview = false
         
@@ -288,7 +259,8 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
               }
             }
           }
-        } catch (err) {
+        }
+        catch (err) {
           console.error('レビュー作成者取得エラー:', err)
         }
 
@@ -342,9 +314,10 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
         console.error('レビューデータ取得エラー:', err)
       }
     }
-    
+
     return reviews
-  } catch (error) {
+  }
+  catch (error) {
     console.error('レビュー取得エラー:', error)
     return []
   }
