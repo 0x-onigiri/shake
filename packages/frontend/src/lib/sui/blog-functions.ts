@@ -73,14 +73,14 @@ export const BlogModule
   voteForReview: (
     tx: Transaction,
     packageId: string,
-    postMetadataObjectId: string,
+    reviewObjectId: string,
     reaction: ReviewReaction,
   ): TransactionResult => {
     return tx.moveCall({
       target: `${packageId}::blog::vote_for_review`,
       arguments: [
-        tx.object(postMetadataObjectId),
         tx.pure.vector('u8', Array.from(new TextEncoder().encode(reaction))),
+        tx.object(reviewObjectId),
       ],
     })
   },

@@ -4,10 +4,10 @@ use shake::user::User;
 use std::string::String;
 use sui::clock::Clock;
 use sui::coin::Coin;
-use sui::object_table::{Self, ObjectTable};
 use sui::sui::SUI;
 use sui::table::{Self, Table};
 use sui::vec_map::{Self, VecMap};
+use sui::vec_set::{Self, VecSet};
 
 public struct Post has key, store {
     id: UID,
@@ -26,24 +26,21 @@ public struct PostMetadata has key, store {
     like: u64,
     tag: vector<String>,
     price: Option<u64>,
-    // postに対するレビューを格納 <レビュワーアカウントid, レビューオブジェクト>
-    reviews: ObjectTable<ID, Review>, // indexer 等使用する場合は不要
-    // postに対するレビューを格納 <レビュワーアカウントid, レビューオブジェクトID>
-    // reviews: Table<ID, ID>,
-    // レビューの総数
+    reviews: VecSet<ID>,
     review_count: u64,
-    // レビューに対する評価を格納 <レビューid, <評価者アカウントid, 評価>>
-    review_votes: Table<ID, Table<ID, u8>>,
-    // レビューの評価数 <評価(1:Helpful, 2:NotHelpful), 評価数>
-    review_vote_count: VecMap<VoteForReview, u64>,
 }
 
 public struct Review has key, store {
     id: UID,
     post_id: ID,
+    reviewer: address,
     content: String,
     created_at: u64,
     updated_at: u64,
+    // レビューの評価数 <評価(1:Helpful, 2:NotHelpful), 評価数>
+    review_vote_count: VecMap<VoteForReview, u64>,
+    // レビューの評価 <評価者アカウントid, 評価>
+    review_votes: VecMap<address, VoteForReview>,
 }
 
 public enum VoteForReview has copy, drop, store {
@@ -85,10 +82,6 @@ public fun create_post(
         updated_at: timestamp,
     };
 
-    let mut review_vote_count = vec_map::empty<VoteForReview, u64>();
-    review_vote_count.insert(VoteForReview::Helpful, 0);
-    review_vote_count.insert(VoteForReview::NotHelpful, 0);
-
     let post_metadata = PostMetadata {
         id: post_metadata_id,
         post_id: post.id.uid_to_inner(),
@@ -96,10 +89,11 @@ public fun create_post(
         like: 0,
         tag: vector[],
         price,
-        reviews: object_table::new(ctx),
-        review_votes: table::new(ctx),
+        reviews: vec_set::empty<ID>(),
+        // review_votes: table::new(ctx),
+        // review_votes: table::new<ID, Table<ID, Review>>(ctx),
         review_count: 0,
-        review_vote_count: review_vote_count,
+        // review_vote_count: review_vote_count,
     };
 
     transfer::public_transfer(post, ctx.sender());
@@ -187,32 +181,48 @@ public fun create_review(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
+    let mut review_vote_count = vec_map::empty<VoteForReview, u64>();
+    review_vote_count.insert(VoteForReview::Helpful, 0);
+    review_vote_count.insert(VoteForReview::NotHelpful, 0);
+
+    let review_votes = vec_map::empty<address, VoteForReview>();
+
     let review = Review {
         id: object::new(ctx),
         post_id: post_metadata.post_id,
+        reviewer: ctx.sender(),
         content,
         created_at: clock.timestamp_ms(),
         updated_at: clock.timestamp_ms(),
+        review_vote_count,
+        review_votes,
     };
 
-    post_metadata.reviews.add(ctx.sender().to_id(), review);
-    post_metadata.review_count = post_metadata.review_count + 1;
+    post_metadata.reviews.insert(review.id.to_inner());
+    transfer::public_share_object(review);
+    // post_metadata.review_count = post_metadata.review_count + 1;
 }
 
 /// レビューに対する評価を追加
-entry fun vote_for_review(post_metadata: &mut PostMetadata, reaction_arg: vector<u8>) {
+entry fun vote_for_review(reaction_arg: vector<u8>, review: &mut Review, ctx: &TxContext) {
     let reaction = parse_vote_for_review(reaction_arg);
+    //todo Noneの場合はエラーとする
+    assert!(reaction != &VoteForReview::None, 100);
+
+    //todo vec_map にinsert する前に、review_votes に同じIDが存在するか確認する
 
     match (reaction) {
         VoteForReview::Helpful => {
-            let count = post_metadata.review_vote_count.get_mut(&VoteForReview::Helpful);
+            review.review_votes.insert(ctx.sender(), VoteForReview::Helpful);
+            let count = review.review_vote_count.get_mut(&VoteForReview::Helpful);
             *count = *count + 1;
         },
         VoteForReview::NotHelpful => {
-            let count = post_metadata.review_vote_count.get_mut(&VoteForReview::NotHelpful);
+            review.review_votes.insert(ctx.sender(), VoteForReview::NotHelpful);
+            let count = review.review_vote_count.get_mut(&VoteForReview::NotHelpful);
             *count = *count + 1;
         },
-        // Noneの場合はエラーとする todo エラーメッセージを追加する
+        // Noneの場合はエラーとする
         VoteForReview::None => abort 100,
     };
 }

@@ -79,12 +79,11 @@ function FreePostDetail({
   const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction()
   const isAuthor = currentAccount?.address === post.author
 
-  // レビュー一覧を取得
   useEffect(() => {
     const getReviews = async () => {
       try {
         setIsLoadingReviews(true)
-        const fetchedReviews = await fetchPostReviews(post.id, post)
+        const fetchedReviews = await fetchPostReviews(post.id, post, currentAccount?.address)
         setReviews(fetchedReviews)
       }
       catch (error) {
@@ -96,10 +95,16 @@ function FreePostDetail({
     }
 
     getReviews()
-  }, [post.id, post])
+  }, [post.id, post, currentAccount?.address])
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (reviews.some(review => review.isCurrentUserReview)) {
+      console.log('すでにレビューを投稿済みです')
+      return
+    }
+    
     if (!reviewContent.trim() || isSubmitting || !post.metadata?.id) return
 
     setIsSubmitting(true)
@@ -124,12 +129,12 @@ function FreePostDetail({
     }
   }
 
-  const handleVoteReview = async (reaction: ReviewReaction) => {
+  const handleVoteReview = async (reaction: ReviewReaction, reviewId: string) => {
     if (!post.metadata?.id) return
 
     try {
       const tx = new Transaction()
-      voteForReview(tx, post.metadata.id, reaction)
+      voteForReview(tx, reviewId, reaction)
       const result = await signAndExecuteTransaction({ transaction: tx })
       console.log('レビュー投稿成功:', result)
       setReviewContent('')
@@ -249,12 +254,11 @@ function PaidPostDetail({
   const currentAccount = useCurrentAccount()
   const isAuthor = currentAccount?.address === post.author
 
-  // レビュー一覧を取得
   useEffect(() => {
     const getReviews = async () => {
       try {
         setIsLoadingReviews(true)
-        const fetchedReviews = await fetchPostReviews(post.id, post)
+        const fetchedReviews = await fetchPostReviews(post.id, post, currentAccount?.address)
         setReviews(fetchedReviews)
       }
       catch (error) {
@@ -266,10 +270,16 @@ function PaidPostDetail({
     }
 
     getReviews()
-  }, [post.id, post])
+  }, [post.id, post, currentAccount?.address])
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (reviews.some(review => review.isCurrentUserReview)) {
+      console.log('すでにレビューを投稿済みです')
+      return
+    }
+    
     if (!reviewContent.trim() || isSubmitting || !post.metadata?.id) return
 
     setIsSubmitting(true)
@@ -293,12 +303,12 @@ function PaidPostDetail({
     }
   }
 
-  const handleVoteReview = async (reaction: ReviewReaction) => {
+  const handleVoteReview = async (reaction: ReviewReaction, reviewId: string) => {
     if (!post.metadata?.id) return
 
     try {
       const tx = new Transaction()
-      voteForReview(tx, post.metadata.id, reaction)
+      voteForReview(tx, reviewId, reaction)
 
       const result = await signAndExecuteTransaction({ transaction: tx })
       console.log(`${reaction}投票成功:`, result)
