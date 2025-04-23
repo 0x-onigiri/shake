@@ -10,6 +10,7 @@ export const BlogModule
     tx: Transaction,
     packageId: string,
     userObjectId: string,
+    thumbnailBlobId: string,
     title: string,
     postBlobId: string,
     price?: number,
@@ -18,6 +19,7 @@ export const BlogModule
       target: `${packageId}::blog::create_post`,
       arguments: [
         tx.object(userObjectId),
+        tx.pure.string(thumbnailBlobId),
         tx.pure.string(title),
         tx.pure.string(postBlobId),
         tx.pure.option('u64', price),

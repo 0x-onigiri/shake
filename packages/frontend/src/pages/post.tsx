@@ -99,12 +99,12 @@ function FreePostDetail({
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (reviews.some(review => review.isCurrentUserReview)) {
       console.log('すでにレビューを投稿済みです')
       return
     }
-    
+
     if (!reviewContent.trim() || isSubmitting || !post.metadata?.id) return
 
     setIsSubmitting(true)
@@ -176,6 +176,16 @@ function FreePostDetail({
             スマートコントラクト
           </Badge>
         </div>
+
+        {post.thumbnailBlobId && (
+          <div>
+            <img
+              src={`${AGGREGATOR}/v1/blobs/${post.thumbnailBlobId}`}
+              alt={post.title}
+              className="w-full h-auto max-h-[400px] object-cover rounded-lg shadow-md"
+            />
+          </div>
+        )}
 
         <h1 className="text-3xl md:text-4xl font-bold leading-tight">{post.title}</h1>
 
@@ -274,12 +284,12 @@ function PaidPostDetail({
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (reviews.some(review => review.isCurrentUserReview)) {
       console.log('すでにレビューを投稿済みです')
       return
     }
-    
+
     if (!reviewContent.trim() || isSubmitting || !post.metadata?.id) return
 
     setIsSubmitting(true)
@@ -479,6 +489,16 @@ function PaidPostDetail({
             スマートコントラクト
           </Badge>
         </div>
+
+        {post.thumbnailBlobId && (
+          <div>
+            <img
+              src={`${AGGREGATOR}/v1/blobs/${post.thumbnailBlobId}`}
+              alt={post.title}
+              className="w-full h-auto max-h-[400px] object-cover rounded-lg shadow-md"
+            />
+          </div>
+        )}
 
         <h1 className="text-3xl md:text-4xl font-bold leading-tight">{post.title}</h1>
 

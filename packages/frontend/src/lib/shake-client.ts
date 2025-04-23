@@ -80,6 +80,7 @@ export async function fetchUserPosts(
     const post: Post = {
       id: field.id.id,
       author: userAddress,
+      thumbnailBlobId: field.thumbnail_blob_id,
       title: field.title,
       postBlobId: field.post_blob_id,
     }
@@ -122,6 +123,7 @@ export async function fetchPost(
   const post: Post = {
     id: fields.id.id,
     author: authorAddress,
+    thumbnailBlobId: fields.thumbnail_blob_id,
     title: fields.title,
     postBlobId: fields.post_blob_id,
     metadata: postMetadata,
@@ -152,27 +154,29 @@ export async function fetchPostContent(
 }
 
 // TODO: contentが暗号化前提になっているが、無料記事の場合は暗号化しないようにする（別関数でもok）
-export async function createPaidPost(tx: Transaction, userObjectId: string, title: string, encryptedContent: Uint8Array, price: number) {
-  const blobId = await uploadToWalrus(encryptedContent)
+export async function createPaidPost(tx: Transaction, userObjectId: string, thumbnailBlobId: string, title: string, encryptedContent: Uint8Array, price: number) {
+  const postBlobId = await uploadToWalrus(encryptedContent)
 
   return BlogModule.createPost(
     tx,
     SHAKE_ONIGIRI.testnet.packageId,
     userObjectId,
+    thumbnailBlobId,
     title,
-    blobId,
+    postBlobId,
     price,
   )
 }
-export async function createFreePost(tx: Transaction, userObjectId: string, title: string, content: string) {
-  const blobId = await uploadToWalrus(content)
+export async function createFreePost(tx: Transaction, userObjectId: string, thumbnailBlobId: string, title: string, content: string) {
+  const postBlobId = await uploadToWalrus(content)
 
   return BlogModule.createPost(
     tx,
     SHAKE_ONIGIRI.testnet.packageId,
     userObjectId,
+    thumbnailBlobId,
     title,
-    blobId,
+    postBlobId,
   )
 }
 
@@ -194,12 +198,11 @@ export async function voteForReview(tx: Transaction, reviewId: string, reaction:
     tx,
     SHAKE_ONIGIRI.testnet.packageId,
     reviewId,
-    reaction
+    reaction,
   )
 }
 
 export async function fetchPostReviews(postId: string, existingPost?: Post, currentUserAddress?: string): Promise<any[]> {
-
   try {
     const post = existingPost || await fetchPost(postId)
 
@@ -210,7 +213,7 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
 
     // post.metadata.reviewsからレビューIDを取得
     const reviewIds = post.metadata.reviews || []
-    
+
     for (const reviewId of reviewIds) {
       try {
         // レビューオブジェクトを直接取得
@@ -226,14 +229,14 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
           console.error('レビュー取得エラー:', reviewObj.error)
           continue
         }
-        
+
         const fields = objResToFields(reviewObj)
 
         const authorAddress = fields.reviewer
         if (authorAddress === 'unknown') {
           throw new Error('Invalid post owner')
         }
-        
+
         if (!fields || !fields.id || !fields.content) {
           continue
         }
@@ -243,19 +246,19 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
           image: undefined,
         }
         let isCurrentUserReview = false
-        
+
         try {
           if (authorAddress && authorAddress !== 'unknown') {
             // 現在のユーザーのアドレスとレビュー作成者のアドレスを比較
             if (currentUserAddress && currentUserAddress === authorAddress) {
               isCurrentUserReview = true
             }
-            
+
             const author = await fetchUser(authorAddress)
             if (author) {
               authorData = {
                 name: author.username || '匿名ユーザー',
-                image: author.image
+                image: author.image,
               }
             }
           }
@@ -269,33 +272,35 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
         let currentUserVote: null | 'Helpful' | 'NotHelpful' = null
 
         try {
-          const voteCountMap = fields.review_vote_count.fields.contents;
+          const voteCountMap = fields.review_vote_count.fields.contents
           for (let i = 0; i < voteCountMap.length; i++) {
-            const voteItem = voteCountMap[i];
+            const voteItem = voteCountMap[i]
             if (voteItem.fields) {
-              const key = voteItem.fields.key.variant;
-              const value = Number(voteItem.fields.value);
-              
+              const key = voteItem.fields.key.variant
+              const value = Number(voteItem.fields.value)
+
               if (key === 'Helpful') {
-                helpfulCount = value;
-              } else if (key === 'NotHelpful') {
-                notHelpfulCount = value;
+                helpfulCount = value
+              }
+              else if (key === 'NotHelpful') {
+                notHelpfulCount = value
               }
             }
           }
 
           if (currentUserAddress && fields.review_votes && fields.review_votes.fields && fields.review_votes.fields.contents) {
-            const reviewVotes = fields.review_votes.fields.contents;
+            const reviewVotes = fields.review_votes.fields.contents
             for (let i = 0; i < reviewVotes.length; i++) {
-              const voteItem = reviewVotes[i];
+              const voteItem = reviewVotes[i]
               if (voteItem.fields && voteItem.fields.key === currentUserAddress) {
-                currentUserVote = voteItem.fields.value.variant;
-                break;
+                currentUserVote = voteItem.fields.value.variant
+                break
               }
             }
           }
-        } catch (err) {
-          console.error('レビュー評価数取得エラー:', err);
+        }
+        catch (err) {
+          console.error('レビュー評価数取得エラー:', err)
         }
 
         const review = {
@@ -306,11 +311,12 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
           helpfulCount: helpfulCount,
           notHelpfulCount: notHelpfulCount,
           isCurrentUserReview,
-          currentUserVote
+          currentUserVote,
         }
-        
+
         reviews.push(review)
-      } catch (err) {
+      }
+      catch (err) {
         console.error('レビューデータ取得エラー:', err)
       }
     }
