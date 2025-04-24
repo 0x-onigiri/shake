@@ -14,7 +14,7 @@ public struct Post has key, store {
     title: String,
     created_at: u64,
     updated_at: u64,
-    // thumbnail_blob_id: String,
+    thumbnail_blob_id: String,
     post_blob_id: String,
     post_metadata_id: ID,
 }
@@ -64,6 +64,7 @@ fun init(ctx: &mut TxContext) {
 #[allow(lint(self_transfer))]
 public fun create_post(
     _: &User,
+    thumbnail_blob_id: String,
     title: String,
     post_blob_id: String,
     price: Option<u64>,
@@ -76,6 +77,7 @@ public fun create_post(
     let post = Post {
         id: object::new(ctx),
         title,
+        thumbnail_blob_id,
         post_blob_id,
         post_metadata_id: post_metadata_id.uid_to_inner(),
         created_at: timestamp,

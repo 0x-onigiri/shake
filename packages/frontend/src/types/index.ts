@@ -8,6 +8,7 @@ export type User = {
 export type Post = {
   id: string
   author: string
+  thumbnailBlobId: string
   title: string
   postBlobId: string
   metadata?: PostMetadata
