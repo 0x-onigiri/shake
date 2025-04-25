@@ -167,6 +167,7 @@ export async function createPaidPost(tx: Transaction, userObjectId: string, thum
     price,
   )
 }
+
 export async function createFreePost(tx: Transaction, userObjectId: string, thumbnailBlobId: string, title: string, content: string) {
   const postBlobId = await uploadToWalrus(content)
 
