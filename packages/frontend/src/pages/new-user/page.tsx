@@ -1,12 +1,12 @@
-import { useActionState } from 'react'
-import { useState, useRef } from 'react'
+import { useActionState, useState, useRef } from 'react'
+import { useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, Loader2, CheckCircle } from 'lucide-react'
-import { useSignAndExecuteTransaction } from '@mysten/dapp-kit'
+import { useSignAndExecuteTransaction, useCurrentAccount } from '@mysten/dapp-kit'
 import { Transaction } from '@mysten/sui/transactions'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { UserModule } from '@/lib/sui/user-functions'
@@ -41,14 +41,23 @@ const initialState: ActionState = {
   },
 }
 
-export default function NewUserPage() {
+export default function Page() {
   const [state, formAction, pending] = useActionState(registerUser, initialState)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
+
+  const currentAccount = useCurrentAccount()
+  const navigate = useNavigate()
   const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction()
 
   async function registerUser(_: ActionState | undefined, formData: FormData): Promise<ActionState> {
+    if (!currentAccount) {
+      return {
+        error: 'ウォレットが接続されていません',
+      }
+    }
+
     try {
       const username = formData.get('username') as string
       const bio = formData.get('bio') as string || ''
@@ -111,10 +120,8 @@ export default function NewUserPage() {
         bio,
       )
 
-      const result = await signAndExecuteTransaction({ transaction: tx })
-      console.log('ユーザー登録:', result)
-      // TODO
-      window.location.reload()
+      await signAndExecuteTransaction({ transaction: tx })
+      await navigate(`/user/${currentAccount.address}`)
 
       return {
         success: true,
