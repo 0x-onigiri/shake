@@ -1,17 +1,21 @@
-import { useActionState, useState, useRef } from 'react'
+import { useActionState, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
+import { z } from 'zod'
+import { useForm, getFormProps, getInputProps } from '@conform-to/react'
+import { parseWithZod } from '@conform-to/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle, Loader2, CheckCircle } from 'lucide-react'
+import { AlertCircle, Loader2 } from 'lucide-react'
 import { useSignAndExecuteTransaction, useCurrentAccount } from '@mysten/dapp-kit'
 import { Transaction } from '@mysten/sui/transactions'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { UserModule } from '@/lib/sui/user-functions'
 import { Textarea } from '@/components/ui/textarea'
 import { uploadToWalrus } from '@/lib/sui/walrus'
+import { sleep } from '@/lib/utils'
 
 export type FormState = {
   username: string
@@ -23,92 +27,61 @@ export type ActionState = {
   message?: string
   error?: string
   success?: boolean
-  fieldErrors?: {
-    username?: string[]
-    bio?: string[]
-    image?: string[]
-  }
 }
 
-const initialState: ActionState = {
-  message: '',
-  error: '',
-  success: false,
-  fieldErrors: {
-    username: [],
-    bio: [],
-    image: [],
-  },
-}
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+
+const userSchema = z.object({
+  username: z.string().min(2, { message: 'Username must be at least 2 characters long' }),
+  bio: z.string().max(500, { message: 'Bio must be 500 characters or less' }).optional(),
+  image: z
+    .instanceof(File, { message: 'Please select an image file' })
+    .refine(file => file?.size > 0, 'Please select an image file')
+    .refine(file => file?.size <= MAX_FILE_SIZE, `Image size must be 5MB or less`)
+    .refine(
+      file => ACCEPTED_IMAGE_TYPES.includes(file?.type),
+      'Only .jpg, .jpeg, .png, .webp, .gif formats are allowed',
+    ),
+})
 
 export default function Page() {
-  const [state, formAction, pending] = useActionState(registerUser, initialState)
+  const [lastResult, formAction, pending] = useActionState(registerUser, undefined)
+  const [form, fields] = useForm({
+
+    lastResult,
+
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: userSchema })
+    },
+    shouldValidate: 'onBlur',
+    shouldRevalidate: 'onInput',
+  })
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const formRef = useRef<HTMLFormElement>(null)
 
   const currentAccount = useCurrentAccount()
   const navigate = useNavigate()
   const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction()
 
-  async function registerUser(_: ActionState | undefined, formData: FormData): Promise<ActionState> {
-    if (!currentAccount) {
-      return {
-        error: 'ウォレットが接続されていません',
-      }
+  async function registerUser(_: unknown, formData: FormData) {
+    const submission = parseWithZod(formData, { schema: userSchema })
+
+    if (submission.status !== 'success') {
+      return submission.reply()
     }
 
+    if (!currentAccount) {
+      return submission.reply({ formErrors: ['Wallet not connected'] })
+    }
+
+    const { username, bio, image } = submission.value
+
     try {
-      const username = formData.get('username') as string
-      const bio = formData.get('bio') as string || ''
-      const imageFile = formData.get('image') as File
-
-      // ユーザー名の検証
-      if (!username || username.length < 3) {
-        return {
-          fieldErrors: {
-            username: ['ユーザー名は3文字以上で入力してください'],
-          },
-        }
+      if (!(image instanceof File)) {
+        return submission.reply({ fieldErrors: { image: ['Invalid image file'] } })
       }
 
-      // 一応500文字以内とした
-      if (bio.length > 500) {
-        return {
-          fieldErrors: {
-            bio: ['自己紹介は500文字以内で入力してください'],
-          },
-        }
-      }
-
-      // 画像ファイルの検証
-      if (!imageFile || imageFile.size === 0) {
-        return {
-          fieldErrors: {
-            image: ['画像ファイルを選択してください'],
-          },
-        }
-      }
-
-      // 画像の種類を検証
-      if (!imageFile.type.startsWith('image/')) {
-        return {
-          fieldErrors: {
-            image: ['アップロードできるのは画像ファイルのみです'],
-          },
-        }
-      }
-
-      // 画像サイズの検証（5MB以下）
-      if (imageFile.size > 5 * 1024 * 1024) {
-        return {
-          fieldErrors: {
-            image: ['画像サイズは5MB以下にしてください'],
-          },
-        }
-      }
-
-      const blobId = await uploadToWalrus(imageFile)
+      const blobId = await uploadToWalrus(image)
       const tx = new Transaction()
 
       UserModule.createUser(
@@ -117,98 +90,91 @@ export default function Page() {
         SHAKE_ONIGIRI.testnet.userListObjectId,
         username,
         blobId,
-        bio,
+        bio || '',
       )
 
       await signAndExecuteTransaction({ transaction: tx })
+
+      await sleep(1500)
+
       await navigate(`/user/${currentAccount.address}`)
 
-      return {
-        success: true,
-        message: 'ユーザー登録が完了しました！',
-      }
+      return submission.reply({ resetForm: true })
     }
     catch (error) {
-      console.error('登録エラー:', error)
-      return {
-        error: 'ユーザー登録中にエラーが発生しました。後でもう一度お試しください。',
-      }
+      console.error('Registration error:', error)
+
+      return submission.reply({ formErrors: ['An error occurred during user registration. Please try again later.'] })
     }
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl)
+  useEffect(() => {
+    const file = fields.image.value
+    if (file instanceof File && file.size > 0) {
+      const url = URL.createObjectURL(file)
+      setPreviewUrl(url)
+      return () => URL.revokeObjectURL(url)
     }
-    const url = URL.createObjectURL(file)
-    setPreviewUrl(url)
-  }
+    else {
+      setPreviewUrl(null)
+    }
+  }, [fields.image.value])
 
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>プロフィールを作成する</CardTitle>
+        <CardTitle>
+          Create Profile
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        {state?.error && (
+
+        {form.errors && (
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{state.error}</AlertDescription>
+            <AlertDescription>{form.errors}</AlertDescription>
           </Alert>
         )}
 
-        {state?.success && state?.message && (
-          <Alert className="mb-4">
-            <CheckCircle className="h-4 w-4" />
-            <AlertDescription>{state.message}</AlertDescription>
-          </Alert>
-        )}
+        <form {...getFormProps(form)} action={formAction} className="space-y-6">
 
-        <form ref={formRef} action={formAction} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="username">ユーザー名</Label>
-            <Input id="username" name="username" placeholder="ユーザー名を入力" required />
-            {state?.fieldErrors?.username && state.fieldErrors.username.length > 0 && (
-              <p className="text-sm text-red-500">{state.fieldErrors.username[0]}</p>
+            <Label htmlFor={fields.username.id}>Username</Label>
+            <Input {...getInputProps(fields.username, { type: 'text' })} placeholder="Enter username" required />
+            {fields.username.errors && (
+              <p className="text-sm text-red-500">{fields.username.errors}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="bio">自己紹介</Label>
+            <Label htmlFor={fields.bio.id}>Bio</Label>
             <Textarea
-              id="bio"
-              name="bio"
-              placeholder="自己紹介を500文字以内で入力してください"
+              {...getInputProps(fields.bio, { type: 'text' })}
+              placeholder="Enter your bio (max 500 characters)"
               rows={3}
             />
-            {state?.fieldErrors?.bio && state.fieldErrors.bio.length > 0 && (
-              <p className="text-sm text-red-500">{state.fieldErrors.bio[0]}</p>
+            {fields.bio.errors && (
+              <p className="text-sm text-red-500">{fields.bio.errors}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="image">プロフィール画像</Label>
+            <Label htmlFor={fields.image.id}>Profile Image</Label>
             <Input
-              id="image"
-              name="image"
-              type="file"
-              ref={fileInputRef}
+              {...getInputProps(fields.image, { type: 'file' })}
               accept="image/*"
-              onChange={handleImageChange}
+
               required
             />
-            {state?.fieldErrors?.image && state.fieldErrors.image.length > 0 && (
-              <p className="text-sm text-red-500">{state.fieldErrors.image[0]}</p>
+            {fields.image.errors && (
+              <p className="text-sm text-red-500">{fields.image.errors}</p>
             )}
 
             {previewUrl && (
               <div className="mt-4">
-                <p className="text-sm text-muted-foreground mb-2">プレビュー:</p>
+                <p className="text-sm text-muted-foreground mb-2">Preview:</p>
                 <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-200">
-                  <img src={previewUrl || '/placeholder.svg'} alt="プレビュー" className="w-full h-full object-cover" />
+                  <img src={previewUrl || '/placeholder.svg'} alt="Preview" className="w-full h-full object-cover" />
                 </div>
               </div>
             )}
