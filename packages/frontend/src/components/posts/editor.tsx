@@ -1,7 +1,7 @@
 'use client'
 
 import type React from 'react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
@@ -23,7 +23,6 @@ type Props = {
 export function Editor({ onSave, pending }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // React Hook Formの設定
   const {
     control,
     handleSubmit,
@@ -33,6 +32,7 @@ export function Editor({ onSave, pending }: Props) {
   } = useForm<PostFormData>({
     resolver: zodResolver(postSchema),
     defaultValues: {
+      thumbnail: undefined,
       title: '',
       content: '<p>ここに本文を入力してください...</p>',
       isPaid: false,
@@ -57,6 +57,19 @@ export function Editor({ onSave, pending }: Props) {
       setValue('content', editor.getHTML(), { shouldValidate: true })
     },
   })
+
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+    }
+    const url = URL.createObjectURL(file)
+    setPreviewUrl(url)
+    setValue('thumbnail', file, { shouldValidate: true })
+  }
 
   const addImage = () => {
     fileInputRef.current?.click()
@@ -91,6 +104,7 @@ export function Editor({ onSave, pending }: Props) {
   }
 
   const onSubmit = (data: PostFormData) => {
+    console.log('Form submitted:', data)
     onSave(data)
   }
 
@@ -99,184 +113,205 @@ export function Editor({ onSave, pending }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="flex items-start gap-4">
-          <div className="space-y-2">
-            <Label>投稿タイプ</Label>
-            <Controller
-              name="isPaid"
-              control={control}
-              render={({ field }) => (
-                <RadioGroup
-                  value={field.value ? 'paid' : 'free'}
-                  onValueChange={value => field.onChange(value === 'paid')}
-                  className="flex space-x-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="free" id="free" />
-                    <Label htmlFor="free">無料</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="paid" id="paid" />
-                    <Label htmlFor="paid">有料</Label>
-                  </div>
-                </RadioGroup>
-              )}
-            />
-          </div>
-
-          {isPaid && (
-            <div className="space-y-2">
-              <Label htmlFor="amount">金額(SUI)</Label>
-              <Controller
-                name="amount"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    id="amount"
-                    type="number"
-                    onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                    value={!field.value ? '' : field.value}
-                    placeholder="金額を入力"
-                    className="max-w-xs"
-                  />
-                )}
-              />
-              {errors.amount && <p className="text-sm text-red-500">{errors.amount.message}</p>}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-2 mt-6">
-          <Label htmlFor="title">タイトル</Label>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="flex items-start gap-4">
+        <div className="space-y-2">
+          <Label>投稿タイプ</Label>
           <Controller
-            name="title"
+            name="isPaid"
             control={control}
             render={({ field }) => (
-              <Input
-                id="title"
-                {...field}
-                placeholder="投稿タイトルを入力"
-                className="text-lg"
-              />
+              <RadioGroup
+                value={field.value ? 'paid' : 'free'}
+                onValueChange={value => field.onChange(value === 'paid')}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="free" id="free" />
+                  <Label htmlFor="free">無料</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="paid" id="paid" />
+                  <Label htmlFor="paid">有料</Label>
+                </div>
+              </RadioGroup>
             )}
           />
-          {errors.title && <p className="text-sm text-red-500">{errors.title.message}</p>}
         </div>
 
-        <div className="space-y-2 mt-6">
-          <Label>本文</Label>
-          <div className="border rounded-md">
-            <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/50">
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => editor.chain().focus().toggleBold().run()}
-                className={editor.isActive('bold') ? 'bg-muted' : ''}
-              >
-                <Bold className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => editor.chain().focus().toggleItalic().run()}
-                className={editor.isActive('italic') ? 'bg-muted' : ''}
-              >
-                <Italic className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                className={editor.isActive('heading', { level: 1 }) ? 'bg-muted' : ''}
-              >
-                <Heading1 className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                className={editor.isActive('heading', { level: 2 }) ? 'bg-muted' : ''}
-              >
-                <Heading2 className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => editor.chain().focus().toggleBulletList().run()}
-                className={editor.isActive('bulletList') ? 'bg-muted' : ''}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                className={editor.isActive('orderedList') ? 'bg-muted' : ''}
-              >
-                <ListOrdered className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-                className={editor.isActive('codeBlock') ? 'bg-muted' : ''}
-              >
-                <Code className="h-4 w-4" />
-              </Button>
-              <Button type="button" size="icon" variant="ghost" onClick={addImage}>
-                <ImageIcon className="h-4 w-4" />
-              </Button>
-              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-              <div className="ml-auto flex gap-1">
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => editor.chain().focus().undo().run()}
-                  disabled={!editor.can().undo()}
-                >
-                  <Undo className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => editor.chain().focus().redo().run()}
-                  disabled={!editor.can().redo()}
-                >
-                  <Redo className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <EditorContent editor={editor} className="p-4 min-h-[300px] prose max-w-none" />
-            {errors.content && <p className="text-sm text-red-500 px-4 pb-2">{errors.content.message}</p>}
+        {isPaid && (
+          <div className="space-y-2">
+            <Label htmlFor="amount">金額(SUI)</Label>
+            <Controller
+              name="amount"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id="amount"
+                  type="number"
+                  onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                  value={!field.value ? '' : field.value}
+                  placeholder="金額を入力"
+                  className="max-w-xs"
+                />
+              )}
+            />
+            {errors.amount && <p className="text-sm text-red-500">{errors.amount.message}</p>}
           </div>
-        </div>
+        )}
+      </div>
 
-        <div className="flex justify-end mt-6">
-          <Button type="submit" disabled={editor.isEmpty || pending}>
-            {pending
-              ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                )
-              : (
-                  'Create'
-                )}
-          </Button>
+      <div className="space-y-2">
+        <Label htmlFor="image">サムネイル画像</Label>
+        <Input
+          id="image"
+          name="image"
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          onChange={handleThumbnailChange}
+          required
+        />
+        {errors.thumbnail && <p className="text-sm text-red-500">{errors.thumbnail.message}</p>}
+
+        {previewUrl && (
+          <div className="mt-4">
+            <p className="text-sm text-muted-foreground mb-2">プレビュー:</p>
+            <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-200">
+              <img src={previewUrl || '/placeholder.svg'} alt="プレビュー" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="title">タイトル</Label>
+        <Controller
+          name="title"
+          control={control}
+          render={({ field }) => (
+            <Input
+              id="title"
+              {...field}
+              placeholder="投稿タイトルを入力"
+              className="text-lg"
+            />
+          )}
+        />
+        {errors.title && <p className="text-sm text-red-500">{errors.title.message}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label>本文</Label>
+        <div className="border rounded-md">
+          <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/50">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              className={editor.isActive('bold') ? 'bg-muted' : ''}
+            >
+              <Bold className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+              className={editor.isActive('italic') ? 'bg-muted' : ''}
+            >
+              <Italic className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+              className={editor.isActive('heading', { level: 1 }) ? 'bg-muted' : ''}
+            >
+              <Heading1 className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+              className={editor.isActive('heading', { level: 2 }) ? 'bg-muted' : ''}
+            >
+              <Heading2 className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+              className={editor.isActive('bulletList') ? 'bg-muted' : ''}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
+              className={editor.isActive('orderedList') ? 'bg-muted' : ''}
+            >
+              <ListOrdered className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+              className={editor.isActive('codeBlock') ? 'bg-muted' : ''}
+            >
+              <Code className="h-4 w-4" />
+            </Button>
+            <Button type="button" size="icon" variant="ghost" onClick={addImage}>
+              <ImageIcon className="h-4 w-4" />
+            </Button>
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+            <div className="ml-auto flex gap-1">
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                onClick={() => editor.chain().focus().undo().run()}
+                disabled={!editor.can().undo()}
+              >
+                <Undo className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                onClick={() => editor.chain().focus().redo().run()}
+                disabled={!editor.can().redo()}
+              >
+                <Redo className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <EditorContent editor={editor} className="p-4 min-h-[300px] prose max-w-none" />
+          {errors.content && <p className="text-sm text-red-500 px-4 pb-2">{errors.content.message}</p>}
         </div>
-      </form>
-    </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button type="submit" disabled={editor.isEmpty || pending}>
+          {pending
+            ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              )
+            : (
+                'Create'
+              )}
+        </Button>
+      </div>
+    </form>
   )
 }

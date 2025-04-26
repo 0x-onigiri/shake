@@ -13,6 +13,7 @@ import { SHAKE_ONIGIRI } from '@/constants'
 import { Editor } from '@/components/posts/editor'
 import { Transaction } from '@mysten/sui/transactions'
 import { type PostFormData } from '@/lib/schemas'
+import { uploadToWalrus } from '@/lib/sui/walrus'
 
 export default function CookPage() {
   const currentAccount = useCurrentAccount()
@@ -72,10 +73,13 @@ function CreatePost({
 
     try {
       setPending(true)
+      const thumbnailBlobId = await uploadToWalrus(formData.thumbnail)
+      console.log('thumbnailBlobId', thumbnailBlobId)
+
       const tx = new Transaction()
 
       if (!formData.isPaid) {
-        await createFreePost(tx, user.id, formData.title, formData.content)
+        await createFreePost(tx, user.id, thumbnailBlobId, formData.title, formData.content)
       }
       else {
         const nonce = crypto.getRandomValues(new Uint8Array(5))
@@ -89,7 +93,7 @@ function CreatePost({
           data: dataToEncrypt,
         })
 
-        await createPaidPost(tx, user.id, formData.title, encryptedBytes, formData.amount * 1000000000)
+        await createPaidPost(tx, user.id, thumbnailBlobId, formData.title, encryptedBytes, formData.amount * 1000000000)
       }
 
       const { digest } = await signAndExecuteTransaction({ transaction: tx })

@@ -8,7 +8,7 @@ import { RequireWallet } from '@/components/auth/require-wallet.tsx'
 import { RequireAuth } from '@/components/auth/require-auth.tsx'
 import ShakeListPage from '@/pages/shake-list.tsx'
 import CookPage from '@/pages/cook.tsx'
-import NewUserPage from '@/pages/new-user.tsx'
+import NewUserPage from '@/pages/new-user/page'
 import UserPage from '@/pages/user.tsx'
 import PostPage from '@/pages/post.tsx'
 

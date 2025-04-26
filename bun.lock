@@ -14,6 +14,8 @@
       "name": "frontend",
       "version": "0.0.0",
       "dependencies": {
+        "@conform-to/react": "^1.4.0",
+        "@conform-to/zod": "^1.4.0",
         "@hookform/resolvers": "^5.0.1",
         "@mysten/dapp-kit": "^0.15.2",
         "@mysten/seal": "^0.3.5",
@@ -66,6 +68,12 @@
     "@0no-co/graphqlsp": ["@0no-co/graphqlsp@1.12.16", "", { "dependencies": { "@gql.tada/internal": "^1.0.0", "graphql": "^15.5.0 || ^16.0.0 || ^17.0.0" }, "peerDependencies": { "typescript": "^5.0.0" } }, "sha512-B5pyYVH93Etv7xjT6IfB7QtMBdaaC07yjbhN6v8H7KgFStMkPvi+oWYBTibMFRMY89qwc9H8YixXg8SXDVgYWw=="],
 
     "@babel/runtime": ["@babel/runtime@7.26.10", "", { "dependencies": { "regenerator-runtime": "^0.14.0" } }, "sha512-2WJMeRQPHKSPemqk/awGrAiuFfzBmOIPXKizAsVhWH9YJqLZ0H+HS4c8loHGgW6utJ3E/ejXQUsiGaQy2NZ9Fw=="],
+
+    "@conform-to/dom": ["@conform-to/dom@1.4.0", "", {}, "sha512-BvYzotcvq6PxTmxCOV089VXzv7oij+yeGIO/Q5/K2f8s030EHzxelPHmLmdnGrKrPP4XRVaYqQHdjHExrqbkBg=="],
+
+    "@conform-to/react": ["@conform-to/react@1.4.0", "", { "dependencies": { "@conform-to/dom": "1.4.0" }, "peerDependencies": { "react": ">=18" } }, "sha512-1oYN+sErUCmxVcVSGE8mO9PiAHKqkb9KrXstER4rTHw+xC3NrQJjQBs+ifilMCfGFw/UJZRexo05TwyI+h0jpg=="],
+
+    "@conform-to/zod": ["@conform-to/zod@1.4.0", "", { "dependencies": { "@conform-to/dom": "1.4.0" }, "peerDependencies": { "zod": "^3.21.0" } }, "sha512-8tEH5jZYHph7A+d4EPr7eIQpoygcOPvqDdMVML//nO3bixQjhu+mLSEoh/zun0BAhL2ePS5nxywhMP9buOlh8w=="],
 
     "@emotion/hash": ["@emotion/hash@0.9.2", "", {}, "sha512-MyqliTZGuOm3+5ZRSaaBGP3USLw6+EGykkwZns2EPC5g8jJ4z9OrdZY9apkl3+UP9+sdz76YYkwCKP5gh8iY3g=="],
 

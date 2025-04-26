@@ -8,3 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 export function truncateAddress(address: string, length = 4) {
   return `${address.slice(0, length + 2)}...${address.slice(-length)}`
 }
+
+export async function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
