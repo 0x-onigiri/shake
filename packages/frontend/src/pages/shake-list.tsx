@@ -45,20 +45,11 @@ async function fetchPostList() {
   return response.data?.objects.nodes
 }
 
-export default function ShakeListPage() {
+export default function Page() {
   const { data: posts } = useSuspenseQuery({
     queryKey: ['fetchPostList'],
     queryFn: fetchPostList,
   })
-
-  // const { data } = useSuiClientQuery(
-  //   'queryEvents',
-  //   {
-  //     query: {
-  //       MoveEventType: `${TESTNET_PACKAGE_ID}::blog::PostCreatedEvent`,
-  //     },
-  //   },
-  // )
 
   if (!posts) {
     return null
