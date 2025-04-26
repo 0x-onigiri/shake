@@ -462,7 +462,7 @@ function PaidPostDetail({
 
   useEffect(() => {
     isPurchased()
-  }, [])
+  }, [walletAddress])
 
   if (!user) {
     return null
