@@ -18,7 +18,7 @@ import { BlogModule } from '@/lib/sui/blog-functions'
 import { devInspectAndGetExecutionResults } from '@polymedia/suitcase-core'
 import { ReviewSection } from '@/components/posts/review-section'
 
-export default function PostPage() {
+export default function Page() {
   const { postId } = useParams()
 
   if (!postId) {

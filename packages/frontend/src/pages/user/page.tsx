@@ -7,7 +7,7 @@ import { fetchUser, fetchUserPosts } from '@/lib/shake-client'
 import { ErrorBoundary } from 'react-error-boundary'
 import { PostCard } from '@/components/posts/post-card'
 
-export default function UserPage() {
+export default function Page() {
   const { walletAddress } = useParams()
 
   if (!walletAddress) {

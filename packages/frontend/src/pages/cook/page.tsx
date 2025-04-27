@@ -15,7 +15,7 @@ import { Transaction } from '@mysten/sui/transactions'
 import { type PostFormData } from '@/lib/schemas'
 import { uploadToWalrus } from '@/lib/sui/walrus'
 
-export default function CookPage() {
+export default function Page() {
   const currentAccount = useCurrentAccount()
 
   if (!currentAccount) {
