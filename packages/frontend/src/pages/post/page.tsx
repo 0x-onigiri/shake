@@ -9,14 +9,15 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import type { Post, ReviewReaction } from '@/types'
 import { fetchUser, fetchPostContent, createReview, voteForReview, fetchPostReviews } from '@/lib/shake-client'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { AGGREGATOR, SHAKE_ONIGIRI, COINS_TYPE_LIST } from '@/constants'
-import { CalendarIcon, Clock, Book } from 'lucide-react'
+import { SHAKE_ONIGIRI, COINS_TYPE_LIST } from '@/constants'
+import { Book } from 'lucide-react'
 import { getInputCoins, downloadAndDecrypt, MoveCallConstructor } from '@/lib/sui/utils'
 import { BlogModule } from '@/lib/sui/blog-functions'
 import { devInspectAndGetExecutionResults } from '@polymedia/suitcase-core'
 import { ReviewSection } from '@/components/posts/review-section'
+import { PostHeader } from './post-header'
+import { PostThumbnail } from './post-thumbnail'
+import { PostAuthorInfo } from './post-author-info'
 
 export default function Page() {
   const { postId } = useParams()
@@ -158,49 +159,13 @@ function FreePostDetail({
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
       <div className="space-y-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <CalendarIcon className="mr-1 h-4 w-4" />
-            <span>2025年3月30日</span>
-          </div>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Clock className="mr-1 h-4 w-4" />
-            <span>
-              5分の読み物
-            </span>
-          </div>
-          <Badge variant="secondary" className="text-sm">
-            Sui Move
-          </Badge>
-          <Badge variant="secondary" className="text-sm">
-            スマートコントラクト
-          </Badge>
-        </div>
+        <PostHeader />
 
-        {post.thumbnailBlobId && (
-          <div>
-            <img
-              src={`${AGGREGATOR}/v1/blobs/${post.thumbnailBlobId}`}
-              alt={post.title}
-              className="w-full h-auto max-h-[400px] object-cover rounded-lg shadow-md"
-            />
-          </div>
-        )}
+        <PostThumbnail thumbnailBlobId={post.thumbnailBlobId} title={post.title} />
 
         <h1 className="text-3xl md:text-4xl font-bold leading-tight">{post.title}</h1>
 
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarImage src={`${AGGREGATOR}/v1/blobs/${user.image}`} alt={user.username} />
-              <AvatarFallback>{user.username}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-medium">{user.username}</p>
-            </div>
-          </div>
-
-        </div>
+        <PostAuthorInfo user={user} />
         {content && <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: content }} />}
 
         <ReviewSection
@@ -217,6 +182,10 @@ function FreePostDetail({
     </div>
   )
 }
+
+// Removed PostHeader definition
+// Removed PostThumbnail definition and interface
+// Removed PostAuthorInfo definition and UserInfo type
 
 const TTL_MIN = 10
 
@@ -471,47 +440,14 @@ function PaidPostDetail({
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
       <div className="space-y-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <CalendarIcon className="mr-1 h-4 w-4" />
-            <span>2025年3月30日</span>
-          </div>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Clock className="mr-1 h-4 w-4" />
-            <span>
-              5分の読み物
-            </span>
-          </div>
-          <Badge variant="secondary" className="text-sm">
-            Sui Move
-          </Badge>
-          <Badge variant="secondary" className="text-sm">
-            スマートコントラクト
-          </Badge>
-        </div>
+        <PostHeader />
 
-        {post.thumbnailBlobId && (
-          <div>
-            <img
-              src={`${AGGREGATOR}/v1/blobs/${post.thumbnailBlobId}`}
-              alt={post.title}
-              className="w-full h-auto max-h-[400px] object-cover rounded-lg shadow-md"
-            />
-          </div>
-        )}
+        <PostThumbnail thumbnailBlobId={post.thumbnailBlobId} title={post.title} />
 
         <h1 className="text-3xl md:text-4xl font-bold leading-tight">{post.title}</h1>
 
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarImage src={`${AGGREGATOR}/v1/blobs/${user.image}`} alt={user.username} />
-              <AvatarFallback>{user.username}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-medium">{user.username}</p>
-            </div>
-          </div>
+          <PostAuthorInfo user={user} />
           <div className="flex items-center gap-3">
             {purchased && decryptedFileUrls.length === 0
               && (
