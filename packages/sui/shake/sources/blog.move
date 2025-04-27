@@ -122,43 +122,51 @@ public fun purchase_post(
 }
 
 public fun is_purchased_post(
-    post_payment: &PostPayment,
-    post_metadata: &PostMetadata,
-    ctx: &mut TxContext,
+    payment: &PostPayment,
+    metadata: &PostMetadata,
+    ctx: &TxContext,
 ): bool {
-    let post_id = post_metadata.post_id;
-    if (!post_payment.list.contains(post_id)) return false;
+    if (metadata.owner == ctx.sender()) {
+        return true
+    };
 
-    let list = post_payment.list.borrow(post_id);
+    let post_id = metadata.post_id;
+    if (!payment.list.contains(post_id)) return false;
+
+    let list = payment.list.borrow(post_id);
     list.contains(&ctx.sender())
 }
 
-public fun namespace(post_payment: &PostPayment): vector<u8> {
-    post_payment.id.to_bytes()
+public fun namespace(payment: &PostPayment): vector<u8> {
+    payment.id.to_bytes()
 }
 
 entry fun seal_approve(
     id: vector<u8>,
-    post_payment: &PostPayment,
-    post_metadata: &PostMetadata,
+    payment: &PostPayment,
+    metadata: &PostMetadata,
     ctx: &TxContext,
 ) {
-    assert!(approve_internal(ctx.sender(), id, post_payment, post_metadata), 9999);
+    assert!(approve_internal(ctx.sender(), id, payment, metadata), 9999);
 }
 
 fun approve_internal(
     caller: address,
     id: vector<u8>,
-    post_payment: &PostPayment,
-    post_metadata: &PostMetadata,
+    payment: &PostPayment,
+    metadata: &PostMetadata,
 ): bool {
     // Check if the id has the right prefix
-    let namespace = namespace(post_payment);
+    let namespace = namespace(payment);
     if (!is_prefix(namespace, id)) {
         return false
     };
 
-    let list = post_payment.list.borrow(post_metadata.post_id);
+    if (metadata.owner == caller) {
+        return true
+    };
+
+    let list = payment.list.borrow(metadata.post_id);
     list.contains(&caller)
 }
 
