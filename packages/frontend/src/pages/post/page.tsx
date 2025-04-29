@@ -15,6 +15,7 @@ import { getInputCoins, downloadAndDecrypt, MoveCallConstructor } from '@/lib/su
 import { BlogModule } from '@/lib/sui/blog-functions'
 import { devInspectAndGetExecutionResults } from '@polymedia/suitcase-core'
 import { ReviewSection } from '@/components/posts/review-section'
+
 import { PostHeader } from './post-header'
 import { PostThumbnail } from './post-thumbnail'
 import { PostAuthorInfo } from './post-author-info'
@@ -46,22 +47,35 @@ function View({
 
   if (post.metadata.price === 0) {
     return (
-      <FreePostDetail post={post} />
+      <FreePostDetail
+        post={post}
+        reviewIds={post.metadata.reviews}
+        walletAddress={currentAccount?.address}
+        isAuthor={currentAccount?.address === post.author}
+      />
     )
   }
 
   return (
     <PaidPostDetail
       post={post}
+      reviewIds={post.metadata.reviews}
       walletAddress={currentAccount?.address}
+      isAuthor={currentAccount?.address === post.author}
     />
   )
 }
 
 function FreePostDetail({
   post,
+  reviewIds,
+  walletAddress,
+  isAuthor,
 }: {
   post: Post
+  reviewIds: string[]
+  walletAddress: string | undefined
+  isAuthor: boolean
 }) {
   const { data: user } = useSuspenseQuery({
     queryKey: ['fetchUser', post.author],
@@ -72,31 +86,15 @@ function FreePostDetail({
     queryFn: () => fetchPostContent(post.postBlobId),
   })
 
+  const { data: reviews, isLoading: isLoadingReviews, refetch: refetchReviews } = useSuspenseQuery({
+    queryKey: ['fetchPostReviews', post.id],
+    queryFn: () => fetchPostReviews(reviewIds, walletAddress),
+  })
+
+  const suiClient = useSuiClient()
   const [reviewContent, setReviewContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [reviews, setReviews] = useState<any[]>([])
-  const [isLoadingReviews, setIsLoadingReviews] = useState(true)
-  const currentAccount = useCurrentAccount()
   const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction()
-  const isAuthor = currentAccount?.address === post.author
-
-  useEffect(() => {
-    const getReviews = async () => {
-      try {
-        setIsLoadingReviews(true)
-        const fetchedReviews = await fetchPostReviews(post.id, post, currentAccount?.address)
-        setReviews(fetchedReviews)
-      }
-      catch (error) {
-        console.error('レビュー取得エラー:', error)
-      }
-      finally {
-        setIsLoadingReviews(false)
-      }
-    }
-
-    getReviews()
-  }, [post.id, post, currentAccount?.address])
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -115,12 +113,12 @@ function FreePostDetail({
       createReview(tx, post.metadata.id, reviewContent)
 
       const result = await signAndExecuteTransaction({ transaction: tx })
+      await suiClient.waitForTransaction({
+        digest: result.digest,
+      })
       console.log('レビュー投稿成功:', result)
       setReviewContent('')
-
-      // レビュー投稿後に一覧を再取得
-      const fetchedReviews = await fetchPostReviews(post.id, post)
-      setReviews(fetchedReviews)
+      await refetchReviews()
     }
     catch (err) {
       console.error('レビュー投稿エラー:', err)
@@ -137,12 +135,12 @@ function FreePostDetail({
       const tx = new Transaction()
       voteForReview(tx, reviewId, reaction)
       const result = await signAndExecuteTransaction({ transaction: tx })
+      await suiClient.waitForTransaction({
+        digest: result.digest,
+      })
       console.log('レビュー投稿成功:', result)
       setReviewContent('')
-
-      // レビュー投稿後に一覧を再取得
-      const fetchedReviews = await fetchPostReviews(post.id, post)
-      setReviews(fetchedReviews)
+      await refetchReviews()
     }
     catch (err) {
       console.error(`${reaction}投票エラー:`, err)
@@ -183,10 +181,6 @@ function FreePostDetail({
   )
 }
 
-// Removed PostHeader definition
-// Removed PostThumbnail definition and interface
-// Removed PostAuthorInfo definition and UserInfo type
-
 const TTL_MIN = 10
 
 function constructMoveCall(packageId: string, postPaymentObjectId: string, postMetadataObjectId: string): MoveCallConstructor {
@@ -200,14 +194,23 @@ function constructMoveCall(packageId: string, postPaymentObjectId: string, postM
 
 function PaidPostDetail({
   post,
+  reviewIds,
   walletAddress,
+  isAuthor,
 }: {
   post: Post
+  reviewIds: string[]
   walletAddress: string | undefined
+  isAuthor: boolean
 }) {
   const { data: user } = useSuspenseQuery({
     queryKey: ['fetchUser', post.author],
     queryFn: () => fetchUser(post.author),
+  })
+
+  const { data: reviews, isLoading: isLoadingReviews, refetch: refetchReviews } = useSuspenseQuery({
+    queryKey: ['fetchPostReviews', post.id],
+    queryFn: () => fetchPostReviews(reviewIds, walletAddress),
   })
 
   const { mutate: signPersonalMessage } = useSignPersonalMessage()
@@ -228,28 +231,6 @@ function PaidPostDetail({
 
   const [reviewContent, setReviewContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [reviews, setReviews] = useState<any[]>([])
-  const [isLoadingReviews, setIsLoadingReviews] = useState(true)
-  const currentAccount = useCurrentAccount()
-  const isAuthor = currentAccount?.address === post.author
-
-  useEffect(() => {
-    const getReviews = async () => {
-      try {
-        setIsLoadingReviews(true)
-        const fetchedReviews = await fetchPostReviews(post.id, post, currentAccount?.address)
-        setReviews(fetchedReviews)
-      }
-      catch (error) {
-        console.error('レビュー取得エラー:', error)
-      }
-      finally {
-        setIsLoadingReviews(false)
-      }
-    }
-
-    getReviews()
-  }, [post.id, post, currentAccount?.address])
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -268,10 +249,12 @@ function PaidPostDetail({
       createReview(tx, post.metadata.id, reviewContent)
 
       const result = await signAndExecuteTransaction({ transaction: tx })
+      await suiClient.waitForTransaction({
+        digest: result.digest,
+      })
       console.log('レビュー投稿成功:', result)
       setReviewContent('')
-      const fetchedReviews = await fetchPostReviews(post.id, post)
-      setReviews(fetchedReviews)
+      await refetchReviews()
     }
     catch (err) {
       console.error('レビュー投稿エラー:', err)
@@ -290,11 +273,11 @@ function PaidPostDetail({
       voteForReview(tx, reviewId, reaction)
 
       const result = await signAndExecuteTransaction({ transaction: tx })
+      await suiClient.waitForTransaction({
+        digest: result.digest,
+      })
       console.log(`${reaction}投票成功:`, result)
-
-      // 投票後にレビュー一覧を再取得
-      const fetchedReviews = await fetchPostReviews(post.id, post)
-      setReviews(fetchedReviews)
+      await refetchReviews()
     }
     catch (err) {
       console.error(`${reaction}投票エラー:`, err)
