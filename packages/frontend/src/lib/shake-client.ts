@@ -2,7 +2,7 @@ import { Transaction } from '@mysten/sui/transactions'
 import { SHAKE_ONIGIRI } from '@/constants'
 import { objResToFields, objResToOwner } from '@polymedia/suitcase-core'
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client'
-import type { User, Post, PostMetadata, ReviewReaction } from '@/types'
+import type { User, Post, PostMetadata, ReviewReaction, Review, ReviewAuthor } from '@/types'
 import { AGGREGATOR } from '@/constants'
 import { BlogModule } from '@/lib/sui/blog-functions'
 import { uploadToWalrus } from '@/lib/sui/walrus'
@@ -117,7 +117,7 @@ export async function fetchPost(
   const postMetadata: PostMetadata = {
     id: postMetadataFields.id.id,
     price: postMetadataFields.price ? Number(postMetadataFields.price) : 0,
-    reviews: postMetadataFields.reviews.fields.contents,
+    reviews: postMetadataFields.reviews.fields.contents || [],
   }
 
   const post: Post = {
@@ -203,76 +203,47 @@ export async function voteForReview(tx: Transaction, reviewId: string, reaction:
   )
 }
 
-export async function fetchPostReviews(postId: string, existingPost?: Post, currentUserAddress?: string): Promise<any[]> {
+export async function fetchPostReviews(reviewIds: string[], currentUserAddress?: string) {
   try {
-    const post = existingPost || await fetchPost(postId)
+    const reviewObjects = await suiClient.multiGetObjects({
+      ids: reviewIds,
+      options: {
+        showContent: true,
+      },
+    })
 
-    if (!post || !post.metadata) {
-      throw new Error('データが見つかりません')
+    const authorAddresses = reviewObjects
+      .map(reviewObj => objResToFields(reviewObj)?.reviewer)
+      .filter((addr): addr is string => !!addr && addr !== 'unknown')
+    const uniqueAuthorAddresses = [...new Set(authorAddresses)]
+    const authorMap = new Map<string, User | null>()
+
+    for (const addr of uniqueAuthorAddresses) {
+      const user = await fetchUser(addr)
+      authorMap.set(addr, user)
     }
-    const reviews = []
 
-    // post.metadata.reviewsからレビューIDを取得
-    const reviewIds = post.metadata.reviews || []
+    const reviews = reviewObjects.map((reviewObj) => {
+      const fields = objResToFields(reviewObj)
 
-    for (const reviewId of reviewIds) {
+      if (!fields || !fields.id || !fields.content || !fields.reviewer || fields.reviewer === 'unknown') {
+        return null
+      }
+
+      const authorAddress = fields.reviewer
+      const author = authorMap.get(authorAddress)
+      const authorData: ReviewAuthor = {
+        name: author ? author.username : '匿名ユーザー',
+        image: author ? author.image : undefined,
+      }
+      const isCurrentUserReview = !!currentUserAddress && currentUserAddress === authorAddress
+
+      let helpfulCount = 0
+      let notHelpfulCount = 0
+      let currentUserVote: ReviewReaction | null = null
+
       try {
-        // レビューオブジェクトを直接取得
-        const reviewObj = await suiClient.getObject({
-          id: reviewId,
-          options: {
-            showContent: true,
-            showOwner: true,
-          },
-        })
-
-        if (reviewObj.error) {
-          console.error('レビュー取得エラー:', reviewObj.error)
-          continue
-        }
-
-        const fields = objResToFields(reviewObj)
-
-        const authorAddress = fields.reviewer
-        if (authorAddress === 'unknown') {
-          throw new Error('Invalid post owner')
-        }
-
-        if (!fields || !fields.id || !fields.content) {
-          continue
-        }
-
-        let authorData: { name: string, image: undefined | string } = {
-          name: '匿名ユーザー',
-          image: undefined,
-        }
-        let isCurrentUserReview = false
-
-        try {
-          if (authorAddress && authorAddress !== 'unknown') {
-            // 現在のユーザーのアドレスとレビュー作成者のアドレスを比較
-            if (currentUserAddress && currentUserAddress === authorAddress) {
-              isCurrentUserReview = true
-            }
-
-            const author = await fetchUser(authorAddress)
-            if (author) {
-              authorData = {
-                name: author.username || '匿名ユーザー',
-                image: author.image,
-              }
-            }
-          }
-        }
-        catch (err) {
-          console.error('レビュー作成者取得エラー:', err)
-        }
-
-        let helpfulCount = 0
-        let notHelpfulCount = 0
-        let currentUserVote: null | 'Helpful' | 'NotHelpful' = null
-
-        try {
+        if (fields.review_vote_count?.fields?.contents) {
           const voteCountMap = fields.review_vote_count.fields.contents
           for (let i = 0; i < voteCountMap.length; i++) {
             const voteItem = voteCountMap[i]
@@ -288,39 +259,36 @@ export async function fetchPostReviews(postId: string, existingPost?: Post, curr
               }
             }
           }
+        }
 
-          if (currentUserAddress && fields.review_votes && fields.review_votes.fields && fields.review_votes.fields.contents) {
-            const reviewVotes = fields.review_votes.fields.contents
-            for (let i = 0; i < reviewVotes.length; i++) {
-              const voteItem = reviewVotes[i]
-              if (voteItem.fields && voteItem.fields.key === currentUserAddress) {
-                currentUserVote = voteItem.fields.value.variant
-                break
-              }
+        if (currentUserAddress && fields.review_votes?.fields?.contents) {
+          const reviewVotes = fields.review_votes.fields.contents
+          for (let i = 0; i < reviewVotes.length; i++) {
+            const voteItem = reviewVotes[i]
+            if (voteItem.fields && voteItem.fields.key === currentUserAddress) {
+              currentUserVote = voteItem.fields.value.variant
+              break
             }
           }
         }
-        catch (err) {
-          console.error('レビュー評価数取得エラー:', err)
-        }
-
-        const review = {
-          id: fields.id.id,
-          content: fields.content,
-          author: authorData,
-          createdAt: new Date(Number(fields.created_at)).toLocaleString('ja-JP'),
-          helpfulCount: helpfulCount,
-          notHelpfulCount: notHelpfulCount,
-          isCurrentUserReview,
-          currentUserVote,
-        }
-
-        reviews.push(review)
       }
       catch (err) {
-        console.error('レビューデータ取得エラー:', err)
+        console.error('レビュー評価数取得エラー:', err)
       }
-    }
+
+      const review: Review = {
+        id: fields.id.id,
+        content: fields.content,
+        author: authorData,
+        createdAt: new Date(Number(fields.created_at)).toLocaleString('ja-JP'),
+        helpfulCount: helpfulCount,
+        notHelpfulCount: notHelpfulCount,
+        isCurrentUserReview,
+        currentUserVote,
+      }
+
+      return review
+    }).filter(r => !!r)
 
     return reviews
   }

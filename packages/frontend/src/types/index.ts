@@ -21,3 +21,19 @@ export type PostMetadata = {
 }
 
 export type ReviewReaction = 'Helpful' | 'NotHelpful'
+
+export type ReviewAuthor = {
+  name: string
+  image?: string
+}
+
+export type Review = {
+  id: string
+  content: string
+  author: ReviewAuthor
+  createdAt: string
+  helpfulCount: number
+  notHelpfulCount: number
+  isCurrentUserReview: boolean
+  currentUserVote: ReviewReaction | null
+}
