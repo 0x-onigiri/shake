@@ -24,7 +24,11 @@ export function Header() {
   const currentAccount = useCurrentAccount()
   return (
     <header className="w-full py-4 px-6 flex justify-between items-center border-b">
-      <Link to="/" className="text-2xl font-bold text-primary">Shake</Link>
+      <div className="flex items-center space-x-4">
+        <Link to="/">
+          <img src="/logo.png" alt="Shake Logo" className="h-8 w-auto" />
+        </Link>
+      </div>
 
       <div className="flex justify-between items-center gap-4">
 
