@@ -4,13 +4,17 @@ import { Button } from '@/components/ui/button'
 import { truncateAddress } from '@/lib/utils'
 import {
   useCurrentAccount,
+  useAccounts,
   useDisconnectWallet,
+  useSwitchAccount,
   ConnectModal,
 } from '@mysten/dapp-kit'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -18,10 +22,12 @@ import type { WalletAccount } from '@mysten/wallet-standard'
 import { fetchUser } from '@/lib/shake-client'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { AGGREGATOR } from '@/constants'
+import { cn } from '@/lib/utils'
 
 export function Header() {
   const [open, setOpen] = useState(false)
   const currentAccount = useCurrentAccount()
+  const accounts = useAccounts()
   return (
     <header className="w-full py-4 px-6 flex justify-between items-center border-b">
       <div className="flex items-center space-x-4">
@@ -47,6 +53,7 @@ export function Header() {
         {currentAccount && (
           <WalletMenu
             walletAccount={currentAccount}
+            wallets={accounts}
           />
         )}
       </div>
@@ -56,8 +63,10 @@ export function Header() {
 
 function WalletMenu({
   walletAccount,
+  wallets,
 }: {
   walletAccount: WalletAccount
+  wallets: readonly WalletAccount[]
 }) {
   const { data: user } = useSuspenseQuery({
     queryKey: ['fetchUser', walletAccount.address],
@@ -85,6 +94,7 @@ function WalletMenu({
       )}
       <WalletButton
         walletAccount={walletAccount}
+        wallets={wallets}
       />
     </>
   )
@@ -92,10 +102,13 @@ function WalletMenu({
 
 function WalletButton({
   walletAccount,
+  wallets,
 }: {
   walletAccount: WalletAccount
+  wallets: readonly WalletAccount[]
 }) {
   const { mutate: disconnect } = useDisconnectWallet()
+  const { mutate: switchAccount } = useSwitchAccount()
 
   return (
     <div>
@@ -112,7 +125,7 @@ function WalletButton({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <div className="flex flex-col gap-3 p-3">
+          <div className="flex flex-col gap-3 p-3 font-bold">
             <Suspense fallback={<div>Loading...</div>}>
               <UserInfo
                 walletAddress={walletAccount.address}
@@ -123,6 +136,36 @@ function WalletButton({
               Disconnect
             </Button>
           </div>
+          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          {
+            wallets.map((account) => {
+              const isCurrentAccount = account.address === walletAccount.address
+              return (
+                <DropdownMenuItem key={account.address}>
+                  <Button
+                    className={
+                      cn(
+                        isCurrentAccount && 'bg-accent',
+                      )
+                    }
+                    variant="secondary"
+                    onClick={() => {
+                      switchAccount(
+                        { account },
+                        {
+                          onSuccess: () => console.log(`switched to ${account.address}`),
+                        },
+                      )
+                    }}
+                  >
+                    {
+                      truncateAddress(account.address)
+                    }
+                  </Button>
+                </DropdownMenuItem>
+              )
+            })
+          }
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
