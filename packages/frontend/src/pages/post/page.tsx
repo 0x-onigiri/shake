@@ -24,7 +24,7 @@ export default function Page() {
   const { postId } = useParams()
 
   if (!postId) {
-    return <div>Post IDが指定されていません</div>
+    return <div>Post ID is not specified</div>
   }
 
   return (<View postId={postId} />)
@@ -42,7 +42,7 @@ function View({
   const currentAccount = useCurrentAccount()
 
   if (!post || !post.metadata) {
-    return <div>Postが見つかりません</div>
+    return <div>Post not found</div>
   }
 
   if (post.metadata.price === 0) {
@@ -100,7 +100,7 @@ function FreePostDetail({
     e.preventDefault()
 
     if (reviews.some(review => review.isCurrentUserReview)) {
-      console.log('すでにレビューを投稿済みです')
+      console.log('You have already posted a review')
       return
     }
 
@@ -116,12 +116,12 @@ function FreePostDetail({
       await suiClient.waitForTransaction({
         digest: result.digest,
       })
-      console.log('レビュー投稿成功:', result)
+      console.log('Review posted successfully:', result)
       setReviewContent('')
       await refetchReviews()
     }
     catch (err) {
-      console.error('レビュー投稿エラー:', err)
+      console.error('Error posting review:', err)
     }
     finally {
       setIsSubmitting(false)
@@ -138,12 +138,12 @@ function FreePostDetail({
       await suiClient.waitForTransaction({
         digest: result.digest,
       })
-      console.log('レビュー投稿成功:', result)
+      console.log('Review posted successfully:', result)
       setReviewContent('')
       await refetchReviews()
     }
     catch (err) {
-      console.error(`${reaction}投票エラー:`, err)
+      console.error(`Error voting ${reaction}:`, err)
     }
     finally {
       setIsSubmitting(false)
@@ -236,7 +236,7 @@ function PaidPostDetail({
     e.preventDefault()
 
     if (reviews.some(review => review.isCurrentUserReview)) {
-      console.log('すでにレビューを投稿済みです')
+      console.log('You have already posted a review')
       return
     }
 
@@ -252,12 +252,12 @@ function PaidPostDetail({
       await suiClient.waitForTransaction({
         digest: result.digest,
       })
-      console.log('レビュー投稿成功:', result)
+      console.log('Review posted successfully:', result)
       setReviewContent('')
       await refetchReviews()
     }
     catch (err) {
-      console.error('レビュー投稿エラー:', err)
+      console.error('Error posting review:', err)
       setIsSubmitting(false)
     }
     finally {
@@ -276,11 +276,11 @@ function PaidPostDetail({
       await suiClient.waitForTransaction({
         digest: result.digest,
       })
-      console.log(`${reaction}投票成功:`, result)
+      console.log(`Voted ${reaction} successfully:`, result)
       await refetchReviews()
     }
     catch (err) {
-      console.error(`${reaction}投票エラー:`, err)
+      console.error(`Error voting ${reaction}:`, err)
     }
   }
 
@@ -436,13 +436,13 @@ function PaidPostDetail({
               && (
                 <Button variant="secondary" size="sm" className="gap-2" onClick={onView}>
                   <Book className="h-4 w-4" />
-                  署名して読む
+                  Sign to read
                 </Button>
               )}
             {post.metadata && post.metadata.price > 0 && !purchased
               && (
                 <Button className="gap-2" onClick={purchase}>
-                  記事を購入
+                  Purchase Article
                   {' '}
                   {post.metadata.price / 1000000000}
                   {' '}

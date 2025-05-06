@@ -51,16 +51,15 @@ export function ReviewSection({
     <div className="space-y-8">
       <div className="border-t pt-8">
         <h2 className="text-2xl font-bold mb-4">
-          レビュー
+          Reviews
           {reviews.length}
-          件
         </h2>
 
         {!isAuthor && !reviews.some(review => review.isCurrentUserReview)
           ? (
               <form onSubmit={onSubmitReview} className="space-y-4">
                 <Textarea
-                  placeholder="コメントを入力..."
+                  placeholder="Enter your comment..."
                   value={reviewContent}
                   onChange={e => onReviewContentChange(e.target.value)}
                   className="min-h-[100px]"
@@ -72,11 +71,11 @@ export function ReviewSection({
                       ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            投稿中...
+                            Posting...
                           </>
                         )
                       : (
-                          '投稿する'
+                          'Post'
                         )}
                   </Button>
                 </div>
@@ -85,7 +84,7 @@ export function ReviewSection({
           : reviews.some(review => review.isCurrentUserReview) && !isAuthor
             ? (
                 <div className="bg-secondary/20 border border-secondary/30 p-4 rounded-md mb-6">
-                  <p className="text-secondary-foreground text-sm">すでにレビューを投稿済みです</p>
+                  <p className="text-secondary-foreground text-sm">You have already posted a review</p>
                 </div>
               )
             : null}
@@ -100,7 +99,7 @@ export function ReviewSection({
             )
           : reviews.length === 0
             ? (
-                <p className="text-gray-500">まだレビューがありません</p>
+                <p className="text-gray-500">No reviews yet</p>
               )
             : (
                 reviews.map(review => (
@@ -159,7 +158,7 @@ export function ReviewSection({
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p>参考になった</p>
+                                    <p>Helpful</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -181,7 +180,7 @@ export function ReviewSection({
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p>参考にならなかった</p>
+                                    <p>Not helpful</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>

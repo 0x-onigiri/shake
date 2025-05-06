@@ -11,7 +11,7 @@ export default function Page() {
   const { walletAddress } = useParams()
 
   if (!walletAddress) {
-    return <div>Wallet Addressが指定されていません</div>
+    return <div>Wallet Address is not specified</div>
   }
 
   return (
@@ -30,7 +30,7 @@ function View({
   })
 
   if (!user) {
-    return <div>Userが見つかりません</div>
+    return <div>User not found</div>
   }
 
   return (

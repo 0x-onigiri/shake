@@ -34,7 +34,7 @@ export function Editor({ onSave, pending }: Props) {
     defaultValues: {
       thumbnail: undefined,
       title: '',
-      content: '<p>ここに本文を入力してください...</p>',
+      content: '',
       isPaid: false,
       amount: undefined,
     },
@@ -51,7 +51,7 @@ export function Editor({ onSave, pending }: Props) {
         allowBase64: true,
       }),
     ],
-    content: '<p>ここに本文を入力してください...</p>',
+    content: '',
     onUpdate: ({ editor }) => {
       // エディタの内容が変更されたら自動的にformの値を更新
       setValue('content', editor.getHTML(), { shouldValidate: true })
@@ -82,7 +82,7 @@ export function Editor({ onSave, pending }: Props) {
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
-      alert('画像ファイルを選択してください')
+      alert('Please select an image file')
       return
     }
 
@@ -116,7 +116,7 @@ export function Editor({ onSave, pending }: Props) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="flex items-start gap-4">
         <div className="space-y-2">
-          <Label>投稿タイプ</Label>
+          <Label>Post Type</Label>
           <Controller
             name="isPaid"
             control={control}
@@ -128,11 +128,11 @@ export function Editor({ onSave, pending }: Props) {
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="free" id="free" />
-                  <Label htmlFor="free">無料</Label>
+                  <Label htmlFor="free">Free</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="paid" id="paid" />
-                  <Label htmlFor="paid">有料</Label>
+                  <Label htmlFor="paid">Paid</Label>
                 </div>
               </RadioGroup>
             )}
@@ -141,7 +141,7 @@ export function Editor({ onSave, pending }: Props) {
 
         {isPaid && (
           <div className="space-y-2">
-            <Label htmlFor="amount">金額(SUI)</Label>
+            <Label htmlFor="amount">Amount (SUI)</Label>
             <Controller
               name="amount"
               control={control}
@@ -151,7 +151,7 @@ export function Editor({ onSave, pending }: Props) {
                   type="number"
                   onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                   value={!field.value ? '' : field.value}
-                  placeholder="金額を入力"
+                  placeholder="Enter amount"
                   className="max-w-xs"
                 />
               )}
@@ -162,7 +162,7 @@ export function Editor({ onSave, pending }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="image">サムネイル画像</Label>
+        <Label htmlFor="image">Thumbnail Image</Label>
         <Input
           id="image"
           name="image"
@@ -176,16 +176,16 @@ export function Editor({ onSave, pending }: Props) {
 
         {previewUrl && (
           <div className="mt-4">
-            <p className="text-sm text-muted-foreground mb-2">プレビュー:</p>
+            <p className="text-sm text-muted-foreground mb-2">Preview:</p>
             <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-200">
-              <img src={previewUrl || '/placeholder.svg'} alt="プレビュー" className="w-full h-full object-cover" />
+              <img src={previewUrl || '/placeholder.svg'} alt="Preview" className="w-full h-full object-cover" />
             </div>
           </div>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="title">タイトル</Label>
+        <Label htmlFor="title">Title</Label>
         <Controller
           name="title"
           control={control}
@@ -193,7 +193,7 @@ export function Editor({ onSave, pending }: Props) {
             <Input
               id="title"
               {...field}
-              placeholder="投稿タイトルを入力"
+              placeholder="Enter post title"
               className="text-lg"
             />
           )}
@@ -202,7 +202,7 @@ export function Editor({ onSave, pending }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label>本文</Label>
+        <Label>Body</Label>
         <div className="border rounded-md">
           <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/50">
             <Button
