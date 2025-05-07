@@ -6,7 +6,7 @@ import { Provider } from '@/provider'
 import { Layout } from '@/components/common/layout'
 import { RequireWallet } from '@/components/auth/require-wallet.tsx'
 import { RequireAuth } from '@/components/auth/require-auth.tsx'
-import ShakeListPage from '@/pages/shake-list.tsx'
+import TopPage from '@/pages/top/page'
 import CookPage from '@/pages/cook/page'
 import NewUserPage from '@/pages/new-user/page'
 import UserPage from '@/pages/user/page'
@@ -19,7 +19,7 @@ createRoot(document.getElementById('root')!)
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout />}>
-              <Route path="/" element={<ShakeListPage />} />
+              <Route path="/" element={<TopPage />} />
               <Route
                 path="/cook"
                 element={(

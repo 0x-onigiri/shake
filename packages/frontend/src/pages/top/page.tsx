@@ -69,6 +69,7 @@ export default function Page() {
             createdAt: new Date(Number(field.created_at)).toLocaleString('ja-JP'),
             author: p?.owner.owner?.address,
           } as Post
+
           return (
             <li key={post.id}>
               <PostCard post={post} />
