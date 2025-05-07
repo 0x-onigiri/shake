@@ -16,27 +16,6 @@ const truncateTitle = (title: string, maxLength = 50) => {
   return `${title.substring(0, maxLength)}...`
 }
 
-const formatDate = (dateString: string) => {
-  if (!dateString) return 'Unknown date'
-
-  const timestamp = parseInt(dateString, 10)
-  if (isNaN(timestamp)) {
-    return 'Unknown date'
-  }
-
-  const date = new Date(timestamp)
-
-  if (isNaN(date.getTime())) {
-    return 'Unknown date'
-  }
-
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-}
-
 type Props = {
   post: Post
 }
@@ -53,17 +32,14 @@ export function PostCard({
     return null
   }
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const postAny = post as any
-
   return (
     <Link to={`/${post.id}`} className="block">
       <Card className="h-[280px] flex flex-col hover:shadow-md transition-shadow overflow-hidden p-0">
         <div className="w-full h-32 bg-muted/30 flex items-center justify-center overflow-hidden">
-          {postAny.thumbnail_blob_id
+          {post.thumbnailBlobId
             ? (
                 <img
-                  src={`${AGGREGATOR}/v1/blobs/${postAny.thumbnail_blob_id}`}
+                  src={`${AGGREGATOR}/v1/blobs/${post.thumbnailBlobId}`}
                   alt="Thumbnail"
                   className="w-full h-full object-cover"
                 />
@@ -105,7 +81,7 @@ export function PostCard({
               </div>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <CalendarIcon className="h-3 w-3" />
-                <span>{formatDate(postAny.created_at)}</span>
+                <span>{post.createdAt}</span>
               </div>
             </div>
           </CardFooter>

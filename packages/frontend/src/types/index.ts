@@ -11,6 +11,7 @@ export type Post = {
   thumbnailBlobId: string
   title: string
   postBlobId: string
+  createdAt: string
   metadata?: PostMetadata
 }
 

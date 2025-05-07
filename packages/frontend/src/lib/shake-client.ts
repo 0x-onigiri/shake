@@ -83,6 +83,7 @@ export async function fetchUserPosts(
       thumbnailBlobId: field.thumbnail_blob_id,
       title: field.title,
       postBlobId: field.post_blob_id,
+      createdAt: new Date(Number(field.created_at)).toLocaleString('ja-JP'),
     }
     return post
   })
@@ -127,6 +128,7 @@ export async function fetchPost(
     title: fields.title,
     postBlobId: fields.post_blob_id,
     metadata: postMetadata,
+    createdAt: new Date(Number(fields.created_at)).toLocaleString('ja-JP'),
   }
 
   console.log('post', post)
