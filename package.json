@@ -10,9 +10,9 @@
     "dev": "bun --filter '*' dev"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "^1.2.12"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.8.3"
   }
 }
