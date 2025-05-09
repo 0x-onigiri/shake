@@ -38,3 +38,12 @@ export type Review = {
   isCurrentUserReview: boolean
   currentUserVote: ReviewReaction | null
 }
+
+export type SessionKeyType = {
+  address: string
+  packageId: string
+  creationTimeMs: number
+  ttlMin: number
+  sessionKey: string
+  personalMessageSignature?: string
+}

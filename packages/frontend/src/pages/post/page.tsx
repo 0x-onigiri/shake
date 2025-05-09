@@ -6,7 +6,7 @@ import { Transaction } from '@mysten/sui/transactions'
 import { fromHex } from '@mysten/sui/utils'
 import { fetchPost } from '@/lib/shake-client'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import type { Post, ReviewReaction } from '@/types'
+import type { Post, ReviewReaction, SessionKeyType } from '@/types'
 import { fetchUser, fetchPostContent, createReview, voteForReview, fetchPostReviews } from '@/lib/shake-client'
 import { Button } from '@/components/ui/button'
 import { SHAKE_ONIGIRI, COINS_TYPE_LIST } from '@/constants'
@@ -203,6 +203,8 @@ function PaidPostDetail({
   walletAddress: string | undefined
   isAuthor: boolean
 }) {
+  const LOCAL_STORAGE_SESSION_KEY = `exportedSessionKey_${post.id}`
+
   const { data: user } = useSuspenseQuery({
     queryKey: ['fetchUser', post.author],
     queryFn: () => fetchUser(post.author),
@@ -225,7 +227,6 @@ function PaidPostDetail({
 
   const [decryptedFileUrls, setDecryptedFileUrls] = useState<string[]>([])
   const [, setError] = useState<string | null>(null)
-  const [currentSessionKey, setCurrentSessionKey] = useState<SessionKey | null>(null)
   const [, setReloadKey] = useState(0)
   const [purchased, setPurchased] = useState(false)
 
@@ -286,31 +287,10 @@ function PaidPostDetail({
 
   console.log('decryptedFileUrls', decryptedFileUrls)
 
-  const onView = async () => {
+  const onSignedToRead = async () => {
     if (!post.metadata || !walletAddress) {
       return
     }
-
-    if (
-      currentSessionKey
-      && !currentSessionKey.isExpired()
-      && currentSessionKey.getAddress() === walletAddress
-    ) {
-      const moveCallConstructor = constructMoveCall(SHAKE_ONIGIRI.testnet.packageId, SHAKE_ONIGIRI.testnet.postPaymentObjectId, post.metadata.id)
-      downloadAndDecrypt(
-        [post.postBlobId],
-        currentSessionKey,
-        suiClient,
-        sealClient,
-        moveCallConstructor,
-        setError,
-        setDecryptedFileUrls,
-        setReloadKey,
-      )
-      return
-    }
-
-    setCurrentSessionKey(null)
 
     const sessionKey = new SessionKey({
       address: walletAddress,
@@ -325,10 +305,10 @@ function PaidPostDetail({
         },
         {
           onSuccess: async (result) => {
-            console.log('result', result)
             if (!post.metadata) {
               return
             }
+
             await sessionKey.setPersonalMessageSignature(result.signature)
             const moveCallConstructor = await constructMoveCall(SHAKE_ONIGIRI.testnet.packageId, SHAKE_ONIGIRI.testnet.postPaymentObjectId, post.metadata.id)
             await downloadAndDecrypt(
@@ -341,7 +321,19 @@ function PaidPostDetail({
               setDecryptedFileUrls,
               setReloadKey,
             )
-            setCurrentSessionKey(sessionKey)
+
+            const exportedFullObject = sessionKey.export()
+
+            const serializableData: SessionKeyType = {
+              address: exportedFullObject.address,
+              packageId: exportedFullObject.packageId,
+              creationTimeMs: exportedFullObject.creationTimeMs,
+              ttlMin: exportedFullObject.ttlMin,
+              personalMessageSignature: exportedFullObject.personalMessageSignature,
+              sessionKey: exportedFullObject.sessionKey,
+            }
+
+            localStorage.setItem(LOCAL_STORAGE_SESSION_KEY, JSON.stringify(serializableData))
           },
           onError: (error) => {
             console.error('Error signing message:', error)
@@ -416,6 +408,42 @@ function PaidPostDetail({
     isPurchased()
   }, [walletAddress])
 
+  useEffect(() => {
+    const restoreSession = async () => {
+      if (!walletAddress || !post.id) {
+        console.log('No wallet address or post ID found')
+        return
+      }
+
+      const storedExportedKey = localStorage.getItem(LOCAL_STORAGE_SESSION_KEY)
+      if (!storedExportedKey) {
+        console.log('No session key found in localStorage')
+        return
+      }
+
+      try {
+        const storedData = JSON.parse(storedExportedKey) as SessionKeyType
+        const restoredSessionKey = await SessionKey.import(storedData, {})
+
+        const moveCallConstructor = constructMoveCall(SHAKE_ONIGIRI.testnet.packageId, SHAKE_ONIGIRI.testnet.postPaymentObjectId, post.metadata.id)
+        downloadAndDecrypt(
+          [post.postBlobId],
+          restoredSessionKey,
+          suiClient,
+          sealClient,
+          moveCallConstructor,
+          setError,
+          setDecryptedFileUrls,
+          setReloadKey,
+        )
+      }
+      catch (error) {
+        console.error('Error parsing or restoring session key from localStorage:', error)
+      }
+    }
+    restoreSession()
+  }, [walletAddress, post.id, LOCAL_STORAGE_SESSION_KEY])
+
   if (!user) {
     return null
   }
@@ -434,7 +462,7 @@ function PaidPostDetail({
           <div className="flex items-center gap-3">
             {purchased && decryptedFileUrls.length === 0
               && (
-                <Button variant="secondary" size="sm" className="gap-2" onClick={onView}>
+                <Button variant="secondary" size="sm" className="gap-2" onClick={onSignedToRead}>
                   <Book className="h-4 w-4" />
                   Sign to read
                 </Button>
