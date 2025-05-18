@@ -1,7 +1,7 @@
 export const SHAKE_ONIGIRI = {
   testnet: {
-    packageId: '0x2830689a67b0a986fe06ecc8b172facd30400b892f4a39973de9ba3968cb4ca6',
-    userListObjectId: '0x9066e2d6030f969bdf76a2e44d4c2d696a32aaf79717ab837efb4aedefb4c57f',
-    postPaymentObjectId: '0xf766137cbff2f223c715da01a60ff89b6057d5fe21b15a9ee6c9dd72d144bfef',
+    packageId: '0xa9507bb0c5f47ff8ca2cfc5fb6c6a9ffe4ab19ebb114228edff1f7866498969a',
+    userListObjectId: '0xc312ed2a7115f4cd4c560fd46b786cd53a8fc55b656041c94755714f34e6cc74',
+    postPaymentObjectId: '0x28dd7822749a4d30477e2eff9b2bf778ffb988080e52260f5fa879e7015e44cf',
   },
-}
+} as const
