@@ -12,24 +12,26 @@ interface UserData {
   walletAddress: string;
   privateKey: string;
   description: string;
-  isLoginUser?: boolean;
+  isAuthor?: boolean;
+  imageBlobId?: string;
 }
 
 // NOTE: このシードフレーズ（パスフレーズ）は開発用のものです
 // 本番環境では使用しないでください。
 const testUsers: UserData[] = [
   {
-    username: "SHAKE User",
+    username: "Author",
     walletAddress: "0x73a5724d45715b7784c1516f27db32b0c50764ddf080da4aaec197c1333f9fb5",
     privateKey: "suiprivkey1qp8xyrpzxstcy6tj7nrnk4r5rqwlvew6nmafdtsl3uaat4ejhrp8km9w870",
-    description: "I'm an SHAKE user",
-    isLoginUser: true,
+    description: "I'm an Author",
+    isAuthor: true,
   },
   {
-    username: "Author",
+    username: "Satoshi",
     walletAddress: "0x2eb8db5ebbb1104ab807852850be8dbdb10a34ff8b2f4be87f5424117a4c2c72",
     privateKey: "suiprivkey1qzmgwwh6hafeqfz7smw5dqre5yg4m85z8ncl7qm8nw9pjcptn4azzpn4azs",
-    description: "I'm an author",
+    description: "I'm an SHAKE User",
+    imageBlobId: "da4KYwCj8AHFiGLPCcE0-gd9RGlX5HCzis2NjU-W-EQ",
   },
   {
     username: "Reviewer",
@@ -53,7 +55,7 @@ async function createTestUser(userData: UserData): Promise<string | null> {
     SHAKE_ONIGIRI.testnet.packageId,
     SHAKE_ONIGIRI.testnet.userListObjectId,
     userData.username,
-    userData.walletAddress,
+    userData.imageBlobId || "jAskg8tUnkE86l-RHkxvFzsbqOPvjjMs4uffjX4nNIc",
     userData.description
   );
 
@@ -81,7 +83,7 @@ async function createTestUser(userData: UserData): Promise<string | null> {
   }
 }
 
-async function createFreePost(userObjectId: string, authorPrivateKey: string) {
+async function createFreePost(userObjectId: string, authorPrivateKey: string, title: string, thumbnailId: string) {
   const keypair = Ed25519Keypair.fromSecretKey(
     decodeSuiPrivateKey(authorPrivateKey).secretKey
   );
@@ -92,9 +94,10 @@ async function createFreePost(userObjectId: string, authorPrivateKey: string) {
     tx,
     SHAKE_ONIGIRI.testnet.packageId,
     userObjectId,
-    "usUbtHDoldLW0COHqui8IruZY5CHH0ThkCnuyjgdtyo", // contentId
-    "無料記事のテストデータ " + new Date().toLocaleTimeString(),
-    "c98lt2GwBlB1BF5bsETUPdCRCp6VfGN7l1OLN7eIc9I" // thumbnailId
+    thumbnailId,
+    // "[FREE] What is the Sui Network? ", // + new Date().toLocaleTimeString(),
+    title,
+    "dVHsT4INnQ_FTZL9rWtqltGeriMcctyEntqKnlAr-6Y", // contentId
   );
 
   try {
@@ -119,9 +122,9 @@ async function createPaidPost(userObjectId: string, authorPrivateKey: string) {
     tx,
     SHAKE_ONIGIRI.testnet.packageId,
     userObjectId,
-    "dDKdwhULnY32awHbgxAj6kOYGXThk6izSfqdHS3P3t8", // contentId
-    "有料記事💰のテストデータ " + new Date().toLocaleTimeString(),
-    "HXiLLKCkcV4e2_L9y83fndd_RMK13JHGXkLeUc-3fYY", // thumbnailId
+    "_0EtyYcQIB5tdDKtMv4qeZdw-lXIFQS9NsvpVAAkLhI", // thumbnailId
+    "[PAID] What is the Sui Network? ", // + new Date().toLocaleTimeString(),
+    "Z6h_hwFx7yPDn7O8D0ck2MiUULU4M5xMHDagwoWVFYg", // contentId
     100000000 // price
   );
 
@@ -152,7 +155,7 @@ async function main() {
     if (userObjectId) {
       createdUserObjectIds[user.username] = userObjectId;
       console.log(`ユーザー「${user.username}」の作成に成功しました: ${userObjectId}`);
-      if (user.isLoginUser) {
+      if (user.isAuthor) {
         loginUserObjectId = userObjectId;
         loginUserPrivateKey = user.privateKey;
       }
@@ -168,30 +171,21 @@ async function main() {
     return;
   }
 
-  const generalTestUser = testUsers.find(u => !u.isLoginUser);
-  if (generalTestUser) {
-    const generalUserObjectId = createdUserObjectIds[generalTestUser.username];
-    if (generalUserObjectId && generalTestUser.privateKey) {
-      const authorPrivateKey = generalTestUser.privateKey;
-      console.log('\n無料記事の作成を開始します...');
-      await createFreePost(generalUserObjectId, authorPrivateKey);
-      console.log('無料記事の作成処理が完了しました。');
-      await sleep(2000);
-    } else {
-      console.error(`一般テストユーザー「${generalTestUser.username}」のObjectId、または秘密鍵が無効か見つかりません。無料記事作成をスキップします。`);
-    }
-  } else {
-    console.error('一般テストユーザーが見つかりません。無料記事作成をスキップします。');
-  }
+  console.log('\n無料記事の作成を開始します...');
+  await createFreePost(loginUserObjectId, loginUserPrivateKey, "[FREE] What is the Sui Network?", "dVHsT4INnQ_FTZL9rWtqltGeriMcctyEntqKnlAr-6Y");
+  await sleep(2000);
+  await createFreePost(loginUserObjectId, loginUserPrivateKey, "Everything about Walrus", "4d2Tk3GLdHuoiphipXSbn7MNUUyrC7I9uS2qR8P689Q");
+  await sleep(2000);
+  await createFreePost(loginUserObjectId, loginUserPrivateKey, "Why is Sui so fast?", "BXrDxPK_GDYHy20AVKA9Y7-eht29jU_Nqw4DA3UahFQ");
+  await sleep(2000);
+  await createFreePost(loginUserObjectId, loginUserPrivateKey, "Mysten Labs and Sui Foundation", "dVHsT4INnQ_FTZL9rWtqltGeriMcctyEntqKnlAr-6Y");
+  console.log('無料記事の作成処理が完了しました。');
 
-  console.log('\n有料記事の作成を開始します...');
+  await sleep(2000);
 
-  if (loginUserObjectId && loginUserPrivateKey) {
-    await createPaidPost(loginUserObjectId, loginUserPrivateKey);
-    console.log('有料記事の作成処理が完了しました。');
-  } else {
-    console.error('ログインユーザーのObjectIdまたはPrivateKeyがnullのため、有料記事の作成をスキップします。');
-  }
+  // console.log('\n有料記事の作成を開始します...');
+  // await createPaidPost(loginUserObjectId, loginUserPrivateKey);
+  // console.log('有料記事の作成処理が完了しました。');
 }
 
 main().catch((error) => {

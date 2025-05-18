@@ -370,6 +370,7 @@ function PaidPostDetail({
       {
         onSuccess: (result) => {
           console.log('executed transaction', result)
+          setPurchased(true)
         },
         onError: (error) => {
           console.error('error', error)
@@ -410,7 +411,7 @@ function PaidPostDetail({
 
   useEffect(() => {
     const restoreSession = async () => {
-      if (!walletAddress || !post.id) {
+      if (!walletAddress || !post.id || !post.metadata) {
         console.log('No wallet address or post ID found')
         return
       }

@@ -42,7 +42,10 @@ async function fetchPostList() {
     query: postListQuery,
   })
 
-  return response.data?.objects.nodes
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  return response.data?.objects.nodes.filter((node: any) => {
+    return node?.owner?.owner?.address !== '0x0000000000000000000000000000000000000000000000000000000000000000'
+  })
 }
 
 export default function Page() {
