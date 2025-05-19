@@ -119,6 +119,7 @@ function FreePostDetail({
       console.log('Review posted successfully:', result)
       setReviewContent('')
       await refetchReviews()
+      window.location.reload()
     }
     catch (err) {
       console.error('Error posting review:', err)
@@ -256,6 +257,7 @@ function PaidPostDetail({
       console.log('Review posted successfully:', result)
       setReviewContent('')
       await refetchReviews()
+      window.location.reload()
     }
     catch (err) {
       console.error('Error posting review:', err)
