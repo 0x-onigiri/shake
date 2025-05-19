@@ -11,6 +11,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AGGREGATOR } from '@/constants'
 import type { ReviewReaction } from '@/types'
 import { cn } from '@/lib/utils'
+import {
+  useCurrentAccount,
+  ConnectModal,
+} from '@mysten/dapp-kit'
 
 interface Review {
   id: string
@@ -47,6 +51,7 @@ export function ReviewSection({
   onSubmitReview,
   onVoteReview,
 }: ReviewSectionProps) {
+  const currentAccount = useCurrentAccount()
   return (
     <div className="space-y-8">
       <div className="border-t pt-8">
@@ -66,18 +71,30 @@ export function ReviewSection({
                   disabled={isSubmitting}
                 />
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting
-                      ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Posting...
-                          </>
-                        )
-                      : (
-                          'Post'
-                        )}
-                  </Button>
+                  {!currentAccount
+                    ? (
+                        <ConnectModal
+                          trigger={(
+                            <Button>
+                              Connect Wallet
+                            </Button>
+                          )}
+                        />
+                      )
+                    : (
+                        <Button type="submit" disabled={isSubmitting}>
+                          {isSubmitting
+                            ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Posting...
+                                </>
+                              )
+                            : (
+                                'Post'
+                              )}
+                        </Button>
+                      )}
                 </div>
               </form>
             )
