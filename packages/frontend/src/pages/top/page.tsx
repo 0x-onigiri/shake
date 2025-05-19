@@ -61,7 +61,7 @@ export default function Page() {
   /* eslint-disable @typescript-eslint/no-explicit-any */
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <ul className="grid grid-cols-3 gap-4">
+      <ul className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {posts.map((p: any) => {
           const field = p?.asMoveObject?.contents?.json
           const post: Post = {
